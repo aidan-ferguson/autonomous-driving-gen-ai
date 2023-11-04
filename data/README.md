@@ -1,0 +1,1 @@
+This folder contains all the scripts used in the creation of the dataset - as well as all other resources

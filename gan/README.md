@@ -1,0 +1,1 @@
+This folder contains all the code used in constructing the Generational Adversarial Network approach to the project

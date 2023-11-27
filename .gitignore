@@ -40,3 +40,10 @@ coverage.xml
 
 # Network checkpoint files
 *.ckpt
+
+# Data png files
+*.png
+
+# CUT training symlinks
+trainA
+trainB

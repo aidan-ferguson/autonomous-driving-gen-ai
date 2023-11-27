@@ -1,4 +1,4 @@
-This folder contains all the scripts used in the creation of the dataset - as well as all other resources
+This folder contains all the scripts used in the creation of the datasets - as well as all other resources
 
 The purpose of this dataset is to generate a set of pairs of corresponding frames. Where the first frame in the pair is the image from the simulator and the second image is the real world camera image.
 

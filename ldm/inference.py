@@ -108,7 +108,7 @@ if __name__ == "__main__":
             uc = None
             if args.scale != 1.0:
                 uc = model.get_learned_conditioning(args.n_samples * [""])
-            c = model.get_learned_conditioning(args.n_samples * ["A POV dash cam image. a white car body with black wheels is visible in the bottom of the image. A blue sky is visible in the top of the image"])
+            c = model.get_learned_conditioning(args.n_samples * [""])
 
             # Run diffusion process
             samples_ddim, _ = sampler.sample(S=args.ddim_steps,

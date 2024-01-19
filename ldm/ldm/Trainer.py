@@ -143,11 +143,12 @@ class Trainer(object):
             # this is the og line from diffinfinite - no clue why scaled by 1/50, same thing happens elsewhere when transitioning to/from latents
             # imgs=self.vae.module.encode(imgs).latent_dist.sample()/50
             imgs = self.vae.vae_encode(imgs)/50
+            # masks = self.vae.vae_encode(masks)
 
         with self.accelerator.autocast():
             loss = self.model(img=imgs,classes=masks)
             
-        self.accelerator.backward(loss)        
+        self.accelerator.backward(loss)
                         
         self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
 

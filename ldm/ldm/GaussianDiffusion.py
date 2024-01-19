@@ -355,6 +355,10 @@ class GaussianDiffusion(nn.Module):
     def p_losses(self, x_start, t, *, classes, noise = None):
         b, c, h, w = x_start.shape
 
+        print("latent and correct map")
+        print(x_start.shape)
+        print(classes.shape)
+
         if noise is None:
             noise = torch.randn_like(x_start)
 

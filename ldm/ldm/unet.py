@@ -4,6 +4,7 @@ from utils.modules import ResnetBlock, SinusoidalPosEmb, Residual, PreNorm, Cros
 import torch
 from torch import nn
 
+
 class UNet(nn.Module):
     def __init__(self,
                dim,
@@ -154,7 +155,9 @@ class UNet(nn.Module):
 
         # derive condition, with condition dropout for classifier free guidance        
 
+        print(classes.shape)
         masks = classes.clone()
+        print(masks.shape)
         # Get the class values (I think)
         classes = (torch.max(classes.reshape(classes.shape[0],-1),-1).values).int()
         
@@ -174,7 +177,7 @@ class UNet(nn.Module):
                 x = block(x, t, c)
                 if i < len(blocks)-1:
                     h.append(x)
-                
+
             x = attn(x, masks)
             h.append(x)
 

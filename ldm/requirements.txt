@@ -1,0 +1,11 @@
+diffusers
+torch==2.0.1
+transformers
+accelerate
+opencv-python
+numpy
+tqdm
+einops
+ema_pytorch
+torchvision==0.15.2
+scikit-learn

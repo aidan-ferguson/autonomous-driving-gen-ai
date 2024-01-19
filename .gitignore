@@ -51,3 +51,6 @@ trainB
 
 # Autoannotation files
 *autoannotate*
+
+# Python virtual envs
+venv

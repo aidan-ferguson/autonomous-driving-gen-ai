@@ -86,7 +86,11 @@ if not os.path.exists(args.input_image_folder) or not os.path.isdir(args.input_i
 if not os.path.exists(args.output_folder):
     raise Exception("The output folder must be a valid folder and exist")
 
-examples = [os.path.join(args.input_image_folder, elem) for elem in os.listdir(args.input_image_folder) if os.path.isfile(os.path.join(args.input_image_folder, elem))]
+# Get all the images in the input folder
+examples = sorted([os.path.join(args.input_image_folder, elem) for elem in os.listdir(args.input_image_folder) if os.path.isfile(os.path.join(args.input_image_folder, elem))])
+
+# Remove all the ones that already exist in the annotations folder (we assume they have been fully annotated)
+examples = [example for example in examples if not os.path.exists(os.path.join(args.output_folder, os.path.basename(example)))]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if args.enable_onnx:
@@ -332,6 +336,13 @@ function test(){
                 }
             }
         });
+
+        // Additionally have a listener for the 'enter' key, this will press the 'Save Segment button'
+        window.addEventListener('keyup', function(event) {
+            if (event.keyCode === 13) {
+                document.getElementById("save_segment_button").click()
+            }
+        });
     `;
     document.head.appendChild(script);
 }       
@@ -363,7 +374,7 @@ with gr.Blocks(css=css, js=script, title="EdgeSAM") as demo:
 
                 with gr.Column():
                     class_dropdown = gr.Dropdown(classes, type="index", label="Class")
-                    save_segment_p = gr.Button("Save Segment", variant="secondary")
+                    save_segment_p = gr.Button("Save Segment", variant="secondary", elem_id="save_segment_button")
                     clear_btn_p = gr.Button("Clear", variant="secondary")
                     reset_btn_p = gr.Button("Reset", variant="secondary")
             with gr.Row():

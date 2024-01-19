@@ -40,6 +40,7 @@ coverage.xml
 
 # Network checkpoint files
 *.ckpt
+*.pt
 
 # Data png files
 *.png
@@ -47,3 +48,6 @@ coverage.xml
 # CUT training symlinks
 trainA
 trainB
+
+# Autoannotation files
+*autoannotate*

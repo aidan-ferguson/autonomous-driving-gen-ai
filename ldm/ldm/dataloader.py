@@ -166,7 +166,7 @@ class DatasetLung(Dataset):
             mask=np.zeros((h,w,1))
 
         img = img.resize((IMAGE_SIZE, IMAGE_SIZE))
-        mask = mask.resize((IMAGE_SIZE, IMAGE_SIZE))
+        mask = mask.resize((IMAGE_SIZE, IMAGE_SIZE)).getchannel("R")
 
         return img,mask
 

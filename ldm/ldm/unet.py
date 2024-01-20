@@ -66,7 +66,7 @@ class UNet(nn.Module):
         self.ups = nn.ModuleList([])
 
         for idx, (dim_in, dim_out) in enumerate(in_out):
-            is_last = idx >= len(in_out)
+            is_last = (idx >= len(in_out) - 1)
 
             blocks = []
             for _ in range(block_per_layer):
@@ -117,7 +117,7 @@ class UNet(nn.Module):
 
         # Going back up the u-net
         for idx, (dim_in, dim_out) in enumerate(reversed(in_out)):
-            is_last = idx >= len(in_out)
+            is_last = (idx >= len(in_out) - 1)
 
             blocks = []
             for _ in range(block_per_layer):
@@ -154,10 +154,7 @@ class UNet(nn.Module):
         batch, device = x.shape[0], x.device
 
         # derive condition, with condition dropout for classifier free guidance        
-
-        print(classes.shape)
         masks = classes.clone()
-        print(masks.shape)
         # Get the class values (I think)
         classes = (torch.max(classes.reshape(classes.shape[0],-1),-1).values).int()
         
@@ -171,6 +168,7 @@ class UNet(nn.Module):
         t = self.time_mlp(time)
 
         h = []
+        print("unet forward")
 
         for *blocks, attn, downsample in self.downs:
             for i, block in enumerate(blocks):
@@ -179,6 +177,7 @@ class UNet(nn.Module):
                     h.append(x)
 
             x = attn(x, masks)
+            print(x.shape)
             h.append(x)
 
             x = downsample(x)

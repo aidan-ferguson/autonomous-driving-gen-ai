@@ -11,7 +11,7 @@ from pathlib import Path
 import csv
 import yaml
 
-IMAGE_SIZE = 256
+IMAGE_SIZE = 128
 
 class ComposeState(T.Compose):
     def __init__(self, transforms):

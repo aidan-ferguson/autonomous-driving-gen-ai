@@ -50,7 +50,9 @@ spec:
         # will be visible inside this container
         env:
         - name: HF_HOME
-          value: "/workspace/.cache"
+          value: "/nfs/.cache"
+        - name: GPU_CLUSTER
+          value: "true"
       # this defines a volume called nfs-access which corresponds to your cluster
       # filespace. 
       volumes:

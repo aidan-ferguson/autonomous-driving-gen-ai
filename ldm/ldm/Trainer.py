@@ -256,6 +256,8 @@ if __name__ == "__main__":
     parser.add_argument('data_folder', type=str, help='path to the dataset')
     args = parser.parse_args()
     
+    print(os.getcwd())
+    print(os.environ.get("GPU_CLUSTER", None))
     Path(results_folder).mkdir(parents=True, exist_ok=True)
 
     unet = UNet(

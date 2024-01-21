@@ -144,6 +144,15 @@ class UNet(nn.Module):
             )
             self.ups.append(nn.ModuleList(blocks))
 
+        self.final_res_block = ResnetBlock(
+            dim = dim * 2,
+            dim_out = dim,
+            time_emb_dim = time_dim,
+            classes_emb_dim = classes_dim,
+            groups = resnet_block_groups,
+        )
+        self.final_conv = nn.Conv2d(dim, self.out_dim, 1)
+
 
     def forward(
         self,

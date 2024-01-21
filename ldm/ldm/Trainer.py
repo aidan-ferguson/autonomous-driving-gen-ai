@@ -274,7 +274,7 @@ if __name__ == "__main__":
             num_samples=num_samples,
             num_workers=num_workers,
             results_folder=results_folder,
-            data_folder="/home/aidan/Downloads/parsed_fsoco")
+            data_folder="/home/ugrdv/dissertation/parsed_fsoco")
 
     if milestone:
         trainer.load(milestone)

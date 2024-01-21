@@ -194,30 +194,28 @@ class Trainer(object):
                 self.save(milestone)
 
     def train(self):
+        print("starting training")
 
-        with tqdm(initial = self.step, total = self.train_num_steps, disable = not self.accelerator.is_main_process) as pbar:
-            
-            while self.step < self.train_num_steps:
+        while self.step < self.train_num_steps:
 
-                total_loss = 0.
+            total_loss = 0.
 
-                for _ in range(self.gradient_accumulate_every):
-                    data,masks=next(self.dl)
-                    
-                    with self.accelerator.accumulate(self.model):
-                        loss = self.train_loop(data,masks)
-                        total_loss += loss.item()
+            for _ in range(self.gradient_accumulate_every):
+                data,masks=next(self.dl)
+                
+                with self.accelerator.accumulate(self.model):
+                    loss = self.train_loop(data,masks)
+                    total_loss += loss.item()
 
-                total_loss/=self.gradient_accumulate_every
-                if self.step % self.save_loss_every == 0:
-                    self.running_loss.append(total_loss)
-                    self.running_lr.append(self.scheduler.get_lr()[0])
+            total_loss/=self.gradient_accumulate_every
+            if self.step % self.save_loss_every == 0:
+                self.running_loss.append(total_loss)
+                self.running_lr.append(self.scheduler.get_lr()[0])
 
-                print(f'step: {self.step}, loss: {total_loss:.4f}')
+            print(f'step: {self.step}, loss: {total_loss:.4f}')
 
-                self.step += 1
-                self.eval_loop()
-                pbar.update(1)
+            self.step += 1
+            self.eval_loop()
 
         self.accelerator.print('training complete')
 

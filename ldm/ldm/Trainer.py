@@ -88,7 +88,6 @@ class Trainer(object):
         # for logging results in a folder periodically
 
         self.ema = EMA(diffusion_model, beta = ema_decay, update_every = ema_update_every)
-
         self.results_folder = Path(results_folder)
         self.results_folder.mkdir(exist_ok = True)
 
@@ -167,17 +166,17 @@ class Trainer(object):
         
         if self.accelerator.is_main_process:
             self.ema.to(self.accelerator.device)
-            self.ema.module.update()
+            self.ema.update()
 
             if self.step != 0 and self.step % self.save_and_sample_every == 0:
-                self.ema.module.ema_model.eval()
+                self.ema.ema_model.eval()
 
                 with torch.no_grad():
                     milestone = self.step // self.save_and_sample_every
                     test_images,test_masks=next(self.test_loader)
                     z = self.vae.vae_encode(
                         test_images[:self.num_samples])/50
-                    z = self.ema.module.ema_model.sample(z,test_masks[:self.num_samples])*50
+                    z = self.ema.ema_model.sample(z,test_masks[:self.num_samples])*50
                     test_samples=torch.clip(self.vae.vae_decode(z),0,1)
                     
                 utils.save_image(test_images[:self.num_samples], 

@@ -256,8 +256,13 @@ if __name__ == "__main__":
     parser.add_argument('data_folder', type=str, help='path to the dataset')
     args = parser.parse_args()
     
-    print(os.getcwd())
-    print(os.environ.get("GPU_CLUSTER", None))
+    # When working in the GPU cluster we set the current dir to the ldm folder location
+    if os.environ.get("GPU_CLUSTER", "false") == "true":
+        script_dir = os.path.abspath(os.path.dirname(__file__))
+        ldm_dir = os.path.pardir(script_dir)
+        os.chdir(ldm_dir)
+        print(f"Now working in {os.getcwd()}")
+        
     Path(results_folder).mkdir(parents=True, exist_ok=True)
 
     unet = UNet(

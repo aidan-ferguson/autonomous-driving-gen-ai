@@ -213,7 +213,7 @@ class Trainer(object):
                     self.running_loss.append(total_loss)
                     self.running_lr.append(self.scheduler.get_lr()[0])
 
-                pbar.set_description(f'loss: {total_loss:.4f}')
+                print(f'step: {self.step}, loss: {total_loss:.4f}')
 
                 self.step += 1
                 self.eval_loop()

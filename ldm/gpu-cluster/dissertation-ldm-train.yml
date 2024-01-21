@@ -25,10 +25,9 @@ spec:
         # to save time on the node
         image: aidanferguson1/dissertation:latest
         # Run the training script
-        command: 
-          - "python3"
-          - "/nfs/dissertation/ldm/ldm/Trainer.py"
-          - "/nfs/parsed_fsoco"
+        command:
+          - "bash"
+          - "/nfs/dissertation/ldm/gpu-cluster/gpu-cluster-bootstrap.bash"
         resources:
           # Hardware requirement requests
           requests:
@@ -36,12 +35,12 @@ spec:
             cpu: "2000m" 
             memory: "2Gi"
             # How many GPUs we request
-            nvidia.com/gpu: 1
+            nvidia.com/gpu: 2
           # Limits, which if exceeded may lead to the container being killed
           limits:
             cpu: "4000m" 
             memory: "8Gi"
-            nvidia.com/gpu: 1
+            nvidia.com/gpu: 2
         # Where to mount the nfs folder
         volumeMounts:
         - mountPath: /nfs

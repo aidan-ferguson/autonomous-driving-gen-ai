@@ -1,0 +1,2 @@
+# Script that will be run in the container on the cluster to being training
+accelerate launch --multi_gpu --num_processes $(nvidia-smi --list-gpus | wc -l) /nfs/dissertation/ldm/ldm/Trainer.py /nfs/parsed_fsoco

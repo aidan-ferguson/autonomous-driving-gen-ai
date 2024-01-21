@@ -239,7 +239,7 @@ if __name__ == "__main__":
     batch_size: int = 64
     lr: float = 1e-4
     train_num_steps: int = 250000
-    save_sample_every: int = 100
+    save_sample_every: int = 10
     gradient_accumulate_every: int = 1
     save_loss_every: int = 1
     num_samples: int = 4

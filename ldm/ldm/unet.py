@@ -153,6 +153,22 @@ class UNet(nn.Module):
         )
         self.final_conv = nn.Conv2d(dim, self.out_dim, 1)
 
+    def forward_with_cond_scale(
+        self,
+        *args,
+        cond_scale = 1.,
+        **kwargs
+    ):
+        
+        logits = self.forward(*args, **kwargs)
+
+        if cond_scale == 1:
+            return logits
+        
+        # condition zero classifier free
+        args = tuple(arg if i!=2 else torch.zeros_like(arg, device=arg.device).int() for i,arg in enumerate(args))
+        null_logits = self.forward(*args, **kwargs)
+        return null_logits + (logits - null_logits) * cond_scale
 
     def forward(
         self,

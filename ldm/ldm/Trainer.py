@@ -4,7 +4,8 @@ from torch.optim import Adam, lr_scheduler
 from ema_pytorch import EMA
 import torch
 from tqdm import tqdm
-from torchvision import transforms as utils
+from torchvision import transforms as T
+from torchvision import utils as utils
 from pathlib import Path
 import argparse
 
@@ -67,9 +68,9 @@ class Trainer(object):
 
         if data_folder:
             transform=ComposeState([
-                        utils.ToTensor(),
-                        utils.RandomHorizontalFlip(),
-                        utils.RandomVerticalFlip(),
+                        T.ToTensor(),
+                        T.RandomHorizontalFlip(),
+                        T.RandomVerticalFlip(),
                         RandomRotate90(),
                         ])
 
@@ -165,12 +166,12 @@ class Trainer(object):
     def eval_loop(self):
         
         if self.accelerator.is_main_process:
-            print("Eval")
+            self.accelerator.print("Eval")
             self.ema.to(self.accelerator.device)
             self.ema.update()
 
             if self.step != 0 and self.step % self.save_and_sample_every == 0:
-                print("Saving images")
+                self.accelerator.print("Saving images")
                 self.ema.ema_model.eval()
 
                 with torch.no_grad():
@@ -214,7 +215,7 @@ class Trainer(object):
                 self.running_loss.append(total_loss)
                 self.running_lr.append(self.scheduler.get_lr()[0])
 
-            print(f'step: {self.step}, loss: {total_loss:.4f}')
+            self.accelerator.print(f'step: {self.step}, loss: {total_loss:.4f}')
 
             self.step += 1
             self.eval_loop()

@@ -180,18 +180,18 @@ class Trainer(object):
         if self.accelerator.is_main_process:
             self.accelerator.print("Eval")
             self.ema.to(self.accelerator.device)
-            self.ema.update()
+            self.ema.module.update()
 
             if self.step != 0 and self.step % self.save_and_sample_every == 0:
                 self.accelerator.print("Saving images")
-                self.ema.ema_model.eval()
+                self.ema.module.ema_model.eval()
 
                 with torch.no_grad():
                     milestone = self.step // self.save_and_sample_every
                     test_images,test_masks=next(self.test_loader)
                     z = self.vae.vae_encode(
                         test_images[:self.num_samples])/50
-                    z = self.ema.ema_model.sample(z,test_masks[:self.num_samples])*50
+                    z = self.ema.module.ema_model.sample(z,test_masks[:self.num_samples])*50
                     test_samples=torch.clip(self.vae.vae_decode(z),0,1)
                     
                 utils.save_image(test_images[:self.num_samples], 

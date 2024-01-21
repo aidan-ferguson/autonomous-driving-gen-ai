@@ -13,6 +13,12 @@ import yaml
 
 IMAGE_SIZE = 128
 
+
+def set_global_seed(seed):
+    torch.random.manual_seed(seed)
+    np.random.seed(seed % (2**32 - 1))
+    random.seed(seed)
+
 class ComposeState(T.Compose):
     def __init__(self, transforms):
         self.transforms = []
@@ -25,13 +31,13 @@ class ComposeState(T.Compose):
         self.retain_state = False
 
     def __call__(self, x):
-        # if self.seed is not None:   # retain previous state
-        #     set_global_seed(self.seed)
-        # if self.retain_state:    # save state for next call
-        #     self.seed = self.seed or torch.seed()
-        #     set_global_seed(self.seed)
-        # else:
-        #     self.seed = None    # reset / ignore state
+        if self.seed is not None:   # retain previous state
+            set_global_seed(self.seed)
+        if self.retain_state:    # save state for next call
+            self.seed = self.seed or torch.seed()
+            set_global_seed(self.seed)
+        else:
+            self.seed = None    # reset / ignore state
 
         if isinstance(x, (list, tuple)):
             return self.apply_sequence(x)

@@ -31,7 +31,8 @@ class Trainer(object):
         ema_update_every = 10,
         ema_decay = 0.995,
         adam_betas = (0.9, 0.99),
-        save_and_sample_every = 1000,
+        sample_every = 1000,
+        save_checkpoint_every = 10000,
         save_loss_every = 100,
         num_workers = 0,
         num_samples = 4,
@@ -57,7 +58,8 @@ class Trainer(object):
 
         assert (math.sqrt(num_samples) ** 2) == num_samples, 'number of samples must have an integer square root'
         self.num_samples = num_samples
-        self.save_and_sample_every = save_and_sample_every
+        self.sample_every = sample_every
+        self.save_checkpoint_every = save_checkpoint_every
         self.save_loss_every = save_loss_every
 
         self.batch_size = train_batch_size
@@ -182,12 +184,12 @@ class Trainer(object):
             self.ema.to(self.accelerator.device)
             self.ema.module.update()
 
-            if self.step != 0 and self.step % self.save_and_sample_every == 0:
+            if self.step != 0 and self.step % self.sample_every == 0:
                 self.accelerator.print("Saving images")
                 self.ema.module.ema_model.eval()
 
                 with torch.no_grad():
-                    milestone = self.step // self.save_and_sample_every
+                    milestone = self.step // self.sample_every
                     test_images,test_masks=next(self.test_loader)
                     z = self.vae.vae_encode(
                         test_images[:self.num_samples])/50
@@ -206,6 +208,8 @@ class Trainer(object):
                                  str(self.results_folder / f'sample-{milestone}.png'), 
                                  nrow = int(math.sqrt(self.num_samples)))
                 
+            if self.step != 0 and self.step % self.save_checkpoint_every == 0:
+                milestone = self.step // self.sample_every
                 self.save(milestone)
 
     def train(self):
@@ -256,7 +260,8 @@ if __name__ == "__main__":
     batch_size: int = 64
     lr: float = 1e-4
     train_num_steps: int = 250000
-    save_sample_every: int = 100
+    sample_every: int = 100
+    save_checkpoint_every: int = 10000
     gradient_accumulate_every: int = 1
     save_loss_every: int = 100
     num_samples: int = 4
@@ -301,7 +306,8 @@ if __name__ == "__main__":
             train_batch_size=batch_size,
             train_lr=lr,
             train_num_steps=train_num_steps,
-            save_and_sample_every=save_sample_every,
+            sample_every=sample_every,
+            save_checkpoint_every=save_checkpoint_every,
             gradient_accumulate_every=gradient_accumulate_every,
             save_loss_every=save_loss_every,
             num_samples=num_samples,

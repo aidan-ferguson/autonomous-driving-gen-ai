@@ -6,9 +6,14 @@ import torch
 from tqdm import tqdm
 from torchvision import transforms as utils
 from pathlib import Path
+import argparse
 
 from VAE import VAE
 from dataloader import ComposeState, RandomRotate90, cycle, import_dataset
+
+# So we don't write files from container with weird permissions on the GPU cluster
+import os
+os.umask(0o002) 
 
 class Trainer(object):
     def __init__(
@@ -246,7 +251,13 @@ if __name__ == "__main__":
     z_size=image_size//8
 
     # dim_mults=[int(mult) for mult in dim_mults.split(' ')]
+
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('data_folder', type=str, help='path to the dataset')
+    args = parser.parse_args()
     
+    Path(results_folder).mkdir(parents=True, exist_ok=True)
+
     unet = UNet(
             dim=dim,
             num_classes=num_classes,
@@ -274,7 +285,7 @@ if __name__ == "__main__":
             num_samples=num_samples,
             num_workers=num_workers,
             results_folder=results_folder,
-            data_folder="/home/ugrdv/dissertation/parsed_fsoco")
+            data_folder=args.data_folder)
 
     if milestone:
         trainer.load(milestone)

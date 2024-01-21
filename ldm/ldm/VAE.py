@@ -2,7 +2,7 @@ import torch
 from diffusers import DiffusionPipeline
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 # TODO: cite all libraries included
 # TODO: use accelerate for easy multi-gpu training

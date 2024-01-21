@@ -8,6 +8,7 @@ from torchvision import transforms as T
 from torchvision import utils as utils
 from pathlib import Path
 import argparse
+from datetime import datetime
 
 from VAE import VAE
 from dataloader import ComposeState, RandomRotate90, cycle, import_dataset
@@ -92,6 +93,17 @@ class Trainer(object):
         self.results_folder = Path(results_folder)
         self.results_folder.mkdir(exist_ok = True)
 
+        # Create loss logs
+        self.train_loss_log_path = os.path.join(self.results_folder, "train_loss.log")
+        if not os.path.exists(self.train_loss_log_path):
+            with open(self.train_loss_log_path, "w") as file:
+                file.write("train loss log\n")
+
+        self.test_loss_log_path = os.path.join(self.results_folder, "test_loss.log")
+        if not os.path.exists(self.test_loss_log_path):
+            with open(self.test_loss_log_path, "w") as file:
+                file.write("test loss log\n")
+                
         # step counter state
 
         self.step = 0
@@ -211,6 +223,10 @@ class Trainer(object):
                     total_loss += loss.item()
 
             total_loss/=self.gradient_accumulate_every
+
+            with open(self.train_loss_log_path, "a") as file:
+                        file.write(f"{self.step} - {loss}\n")
+            
             if self.step % self.save_loss_every == 0:
                 self.running_loss.append(total_loss)
                 self.running_lr.append(self.scheduler.get_lr()[0])
@@ -240,12 +256,12 @@ if __name__ == "__main__":
     batch_size: int = 64
     lr: float = 1e-4
     train_num_steps: int = 250000
-    save_sample_every: int = 10
+    save_sample_every: int = 1000
     gradient_accumulate_every: int = 1
-    save_loss_every: int = 1
+    save_loss_every: int = 100
     num_samples: int = 4
     num_workers: int = 32
-    results_folder: str = './results/run_name'
+    results_folder: str = f'./results/{datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")}'
     milestone: int = None
 
     z_size=image_size//8

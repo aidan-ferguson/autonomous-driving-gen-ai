@@ -258,9 +258,8 @@ if __name__ == "__main__":
     
     # When working in the GPU cluster we set the current dir to the ldm folder location
     if os.environ.get("GPU_CLUSTER", "false") == "true":
-        script_dir = os.path.abspath(os.path.dirname(__file__))
-        ldm_dir = os.path.pardir(script_dir)
-        os.chdir(ldm_dir)
+        script_dir = Path(os.path.abspath(os.path.dirname(__file__)))
+        os.chdir(ldm_dir.parent.absolute())
         print(f"Now working in {os.getcwd()}")
         
     Path(results_folder).mkdir(parents=True, exist_ok=True)

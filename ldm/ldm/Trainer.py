@@ -165,10 +165,12 @@ class Trainer(object):
     def eval_loop(self):
         
         if self.accelerator.is_main_process:
+            print("Eval")
             self.ema.to(self.accelerator.device)
             self.ema.update()
 
             if self.step != 0 and self.step % self.save_and_sample_every == 0:
+                print("Saving images")
                 self.ema.ema_model.eval()
 
                 with torch.no_grad():
@@ -234,12 +236,12 @@ if __name__ == "__main__":
     block_per_layer: int = 2
     timesteps: int = 1000
     sampling_timesteps: int = 250
-    batch_size: int = 32
+    batch_size: int = 64
     lr: float = 1e-4
     train_num_steps: int = 250000
-    save_sample_every: int = 25000
+    save_sample_every: int = 100
     gradient_accumulate_every: int = 1
-    save_loss_every: int = 100
+    save_loss_every: int = 1
     num_samples: int = 4
     num_workers: int = 32
     results_folder: str = './results/run_name'

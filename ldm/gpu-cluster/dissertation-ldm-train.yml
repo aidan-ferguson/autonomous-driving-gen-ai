@@ -32,14 +32,14 @@ spec:
           # Hardware requirement requests
           requests:
             # How many milli-cores we request
-            cpu: "2000m" 
-            memory: "2Gi"
+            cpu: "4000m" 
+            memory: "16Gi"
             # How many GPUs we request
             nvidia.com/gpu: 2
           # Limits, which if exceeded may lead to the container being killed
           limits:
             cpu: "4000m" 
-            memory: "8Gi"
+            memory: "16Gi"
             nvidia.com/gpu: 2
         # Where to mount the nfs folder
         volumeMounts:

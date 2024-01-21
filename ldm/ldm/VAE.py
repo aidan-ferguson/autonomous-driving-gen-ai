@@ -24,7 +24,7 @@ class VAE():
         :returns: The encoded latents, will be of shape (n, 4, h/f, w/f), where f is the 
             scaling factor (in our case 8)
         """
-        return self.vae.encode(imgs).latent_dist.sample()
+        return self.vae.module.encode(imgs).latent_dist.sample()
     
     @torch.no_grad()
     def vae_decode(self, latents: torch.Tensor) -> torch.Tensor:
@@ -34,7 +34,7 @@ class VAE():
         :param latents: Latent space tensors representing images, must be of shape
             (n, 4, h/f, w/f), where f is the scaling factor (8 for us)
         """
-        return torch.clip(self.vae.decode(latents).sample, 0, 1)
+        return torch.clip(self.vae.module.decode(latents).sample, 0, 1)
 
 # temp
 def load_image(filepath: str) -> torch.Tensor:

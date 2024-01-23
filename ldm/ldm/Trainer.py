@@ -70,16 +70,9 @@ class Trainer(object):
         self.cond_scale = cond_scale
 
         if data_folder:
-            transform=ComposeState([
-                        T.ToTensor(),
-                        T.RandomHorizontalFlip(),
-                        T.RandomVerticalFlip(),
-                        RandomRotate90(),
-                        ])
 
             train_loader, test_loader = import_dataset(data_folder,
-                                                batch_size=train_batch_size,   
-                                                transform=transform)
+                                                batch_size=train_batch_size)
 
             train_loader, test_loader = self.accelerator.prepare(train_loader, test_loader)
             self.dl = cycle(train_loader)

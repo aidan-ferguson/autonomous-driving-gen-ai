@@ -183,6 +183,8 @@ class DatasetLung(Dataset):
 
         if self.transform is not None:
             img,mask = self.transform((img,mask))
+        else:
+            img, mask = torch.tensor(img), torch.tensor(mask)
 
         # mask = self.multi_to_single_mask(mask)
 

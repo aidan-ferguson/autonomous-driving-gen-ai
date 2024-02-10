@@ -13,11 +13,11 @@ FSOCO_BORDER = 140
 
 # Note, this is in BGR format - it tells us how classes are mapped to colours
 class_colour_map = {
-    "seg_yellow_cone": np.array([5, 5, 5]),
-    "seg_blue_cone": np.array([4, 4, 4]),
-    "seg_orange_cone": np.array([3, 3, 3]),
-    "seg_large_orange_cone": np.array([2, 2, 2]),
-    "seg_unknown_cone": np.array([1, 1, 1])
+    "seg_yellow_cone": np.array([255,255,0]),
+    "seg_blue_cone": np.array([0,0,255]),
+    "seg_orange_cone": np.array([255,165,0]),
+    "seg_large_orange_cone": np.array([255,69,0]),
+    "seg_unknown_cone": np.array([100,100,100])
 }
 
 def base64_2_mask(s):
@@ -35,7 +35,7 @@ def binary_mask_to_colour(bitmap, class_title):
     """
     indices = np.nonzero(bitmap)
     coloured = np.zeros((bitmap.shape[0], bitmap.shape[1], 3))
-    coloured[indices] = class_colour_map[class_title]
+    coloured[indices] = class_colour_map[class_title][::-1]
     return coloured
 
 def parse_team_folder(fsoco_folder, output_folder, team_folder) -> None:

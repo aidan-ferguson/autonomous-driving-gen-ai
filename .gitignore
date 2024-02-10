@@ -50,7 +50,7 @@ trainA
 trainB
 
 # Autoannotation files
-*autoannotate*
+*auto_annotate_labels*
 
 # Python virtual envs
 venv

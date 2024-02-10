@@ -9,3 +9,4 @@ einops
 ema_pytorch
 torchvision==0.15.2
 scikit-learn
+notebook

@@ -4,5 +4,6 @@ FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
 ARG requirements
 
-RUN echo $requirements | base64 --decode > requirements.txt
-RUN python3 -m pip install -r requirements.txt
+RUN echo $requirements | base64 --decode > req.txt
+RUN python3 -m pip install -r req.txt
+EXPOSE 6006/tcp 8888/tcp

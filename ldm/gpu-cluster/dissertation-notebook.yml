@@ -1,0 +1,60 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: pythonmlnotebookgpu
+  namespace: l423aidanproject
+spec:
+  replicas: 1
+  strategy:
+    resources: {}
+  template:
+    metadata:
+      labels:
+        app: pythonMLNotebook
+        deploymentconfig: pythonMLNotebookGPU
+        group: l423aidanproject
+    spec:
+      nodeSelector:
+        # node-role.ida/gpua6000: "true"
+        node-role.ida/gputitan: "true"
+        # node-role.ida/gpu2080ti: "true"
+      containers:
+      - name: dissertation-ldm-train-container
+        image: aidanferguson1/dissertation:latest
+        resources:
+          requests:
+            cpu: "2000m"
+            memory: "64Gi"
+            nvidia.com/gpu: 1
+          limits:
+            cpu: "2500m"
+            memory: "64Gi"
+            nvidia.com/gpu: 1
+        command:
+          - 'python3'
+        args:
+          - '-m'
+          - 'jupyter'
+          - 'notebook'
+          - '--no-browser'
+          - '--ip=0.0.0.0'
+          - '--allow-root'
+          - '--NotebookApp.token='
+          - '--notebook-dir="/nfs/"'
+        ports:
+          - containerPort: 8888
+        imagePullPolicy: Always
+        volumeMounts:
+          - mountPath: /nfs/
+            name: nfs-access
+          - mountPath: /dev/shm
+            name: dshm
+      securityContext: {}
+      serviceAccount: containerroot
+      volumes:
+      - name: nfs-access
+        persistentVolumeClaim:
+          claimName: l423aidanvol1claim
+      - name: dshm
+        emptyDir:
+          medium: Memory

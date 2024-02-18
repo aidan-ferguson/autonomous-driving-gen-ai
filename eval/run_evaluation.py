@@ -10,6 +10,10 @@ import os
 import random
 import datetime
 import shutil
+import cv2
+
+# For some reason FSOCO images are surrounded by a black border of thickness 140, we remove this
+FSOCO_BORDER = 140
 
 def synthetic_data_schedule(trail_idx: int, real_world_train_size: int) -> int:
     """
@@ -59,7 +63,10 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
 
     # Copy the selected samples to the training folder in the generated evaluation folder
     for image, label in zip(rw_images, rw_labels):
-        shutil.copyfile(os.path.join(rw_image_dir, image), os.path.join(train_image_dir, image))
+        # FSOCO dataset has a border of 140px around the image - remove this 
+        img = cv2.imread(os.path.join(rw_image_dir, image))
+        img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
+        cv2.imwrite(os.path.join(train_image_dir, image), img)
         shutil.copyfile(os.path.join(rw_label_dir, label), os.path.join(train_label_dir, label))
 
     synthetic_count = 0

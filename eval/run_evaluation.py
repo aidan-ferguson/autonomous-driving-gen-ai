@@ -11,9 +11,26 @@ import random
 import datetime
 import shutil
 import cv2
+from ultralytics import YOLO
 
 # For some reason FSOCO images are surrounded by a black border of thickness 140, we remove this
 FSOCO_BORDER = 140
+
+def generate_yolo_yaml(dataset_dir: str):
+    return f"""
+path: {dataset_dir}
+train: images
+val: images
+test:
+
+names:
+  0: blue
+  1: orange
+  2: largeorange
+  3: yellow
+  4: unknown
+"""
+    
 
 def synthetic_data_schedule(trail_idx: int, real_world_train_size: int) -> int:
     """
@@ -34,8 +51,9 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
     # Make folder to house our evaluation results
     timestamp = datetime.datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
     eval_dir = os.path.join(os.path.dirname(__file__), f"diffusion_evaluation_{timestamp}")
-    train_image_dir = os.path.join(eval_dir, "dataset", "images")
-    train_label_dir = os.path.join(eval_dir, "dataset", "labels")
+    dataset_dir = os.path.join(eval_dir, "dataset")
+    train_image_dir = os.path.join(dataset_dir, "images")
+    train_label_dir = os.path.join(dataset_dir, "labels")
 
     if os.path.exists(eval_dir):
         raise Exception(f"Evaluation folder '{eval_dir}' already exists, quitting")
@@ -74,13 +92,18 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         new_synthetic_count = synthetic_data_schedule(idx, 10)
         if (new_synthetic_count - synthetic_count) > 0:
             # We need to generate some images
-            for idx in range(synthetic_count, new_synthetic_count):
+            for sample_idx in range(synthetic_count, new_synthetic_count):
                 # Generate an image label pair using simulator mask & sim bounding box info 
                 pass
         
         # We can now train a YOLO network using the information we have so far
-        
-        
+        model = YOLO('yolov8m.yaml')
+        yaml = generate_yolo_yaml()
+
+        with open(os.path.join(dataset_dir, "fsoco.yaml")) as file:
+            file.write(yaml)
+
+        results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=256)
 
 
 def main() -> None:

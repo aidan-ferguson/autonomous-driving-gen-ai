@@ -100,7 +100,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         model = YOLO('yolov8m.yaml')
         yaml = generate_yolo_yaml(dataset_dir)
 
-        with open(os.path.join(dataset_dir, "fsoco.yaml")) as file:
+        with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
             file.write(yaml)
 
         results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=256)

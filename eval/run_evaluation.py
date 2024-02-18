@@ -89,6 +89,8 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
 
     synthetic_count = 0
     for idx in range(10):
+        print(f"Evaluation step {idx}")
+
         new_synthetic_count = synthetic_data_schedule(idx, 10)
         if (new_synthetic_count - synthetic_count) > 0:
             # We need to generate some images
@@ -108,7 +110,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
             file.write(yaml)
 
-        results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=256)
+        results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=256, verbose=False)
 
 
 def main() -> None:

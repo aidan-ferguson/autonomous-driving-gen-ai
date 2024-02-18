@@ -96,6 +96,11 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
                 # Generate an image label pair using simulator mask & sim bounding box info 
                 pass
         
+        # YOLO training outputs a folder called 'runs' in the current working dir, so chdir into the iteration
+        eval_step_dir = os.path.join(eval_dir, f"evaluation_step_{idx}")
+        os.mkdir(eval_step_dir)
+        os.chdir(eval_step_dir) 
+
         # We can now train a YOLO network using the information we have so far
         model = YOLO('yolov8m.yaml')
         yaml = generate_yolo_yaml(dataset_dir)

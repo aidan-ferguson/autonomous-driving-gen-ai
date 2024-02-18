@@ -98,7 +98,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         
         # We can now train a YOLO network using the information we have so far
         model = YOLO('yolov8m.yaml')
-        yaml = generate_yolo_yaml()
+        yaml = generate_yolo_yaml(dataset_dir)
 
         with open(os.path.join(dataset_dir, "fsoco.yaml")) as file:
             file.write(yaml)

@@ -37,6 +37,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         raise Exception(f"Evaluation folder '{eval_dir}' already exists, quitting")
     else:
         os.mkdir(eval_dir)
+        os.mkdir(os.path.join(eval_dir, "dataset"))
         os.mkdir(train_image_dir)
         os.mkdir(train_label_dir)
 

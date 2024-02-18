@@ -46,44 +46,49 @@ public class LoadTrack : MonoBehaviour
                 GameObject obj = null;
                 if (type == "blue")
                 {
-                    // Note, all small cones must be offset by half of their height
-                    position.y += (0.325f/2);
+                    // Note, all small cones must be offset by a quarter of their height
+                    position.y += 0.03f;
                     obj = Instantiate(blueConePrefab, position, Quaternion.Euler(-90, 0, 0));
                     obj.tag = "blue_cone";
                 }
                 else if(type == "yellow")
                 {
-                    position.y += (0.325f/2);
+                    position.y += 0.03f;
                     obj = Instantiate(yellowConePrefab, position, Quaternion.Euler(-90, 0, 0));
                     obj.tag = "yellow_cone";
                 }
-                else if(type == "big_orange")
-                {
-                    obj = Instantiate(largeOrangePrefab, position, Quaternion.identity);
-                    obj.tag = "large_orange_cone";
-                }
                 else if(type == "orange")
                 {
-                    position.y += (0.325f/2);
-                    obj = Instantiate(orangePrefab, position, Quaternion.Euler(-90, 0, 0));
+                    position.y += 0.03f;
+                    // Note, I have no good orange cone mesh - so this is a placeholder - the segmentation will still be correct
+                    obj = Instantiate(yellowConePrefab, position, Quaternion.Euler(-90, 0, 0));
                     obj.tag = "orange_cone";
+                }
+                else if(type == "big_orange")
+                {
+                    obj = Instantiate(largeOrangePrefab, position, Quaternion.Euler(-90, 0, 0));
+                    obj.tag = "large_orange_cone";
                 }
                 else if(type == "car_start")
                 {
                     // Create car at start, note car must be
-                    // position.y += 0.3f;
                     Instantiate(carPrefab, position, Quaternion.identity);
-                    // position.y += 1.0f;
                     // GameObject.Find("Main Camera").transform.position = position;
                 }
                 
                 if (obj != null)
                 {
+                    // Add physics to the object, note isKinematic is required as we have non-convex hulls
                     Rigidbody rigidBody = obj.AddComponent<Rigidbody>();
                     rigidBody.isKinematic = true;
 
+                    // Add a concave mesh collider, note must be non-convex to match the shape of the cone
                     MeshCollider meshCollider = obj.AddComponent<MeshCollider>();
                     meshCollider.convex = false;
+
+                    // Add a box collider but disable it, will be temporarily re-enabled when calculating bounding boxes
+                    BoxCollider box = obj.AddComponent<BoxCollider>();
+                    box.enabled = false;
                 }
             }
         }

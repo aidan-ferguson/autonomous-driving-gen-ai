@@ -2,8 +2,15 @@
 # points of note:
 #   the real world folder must be structure like:
 #       root
-#         > images
-#         > labels (in .txt YOLO format)
+#         > images                          (e.g. AMZ_0001.png)
+#         > labels  (in .txt YOLO format)   (e.g. AMZ_0001.txt)
+#
+#   the simulator data folder must be structure like:
+#       root
+#         > simulator images                (e.g. sim_frame_0.png)
+#         > simulator masks                 (e.g. sim_frame_0_mask.png)
+#         > labels (in .txt YOLO format)    (e.g. sim_frame_0.txt)
+#
 
 import argparse
 import os
@@ -12,6 +19,7 @@ import datetime
 import shutil
 import cv2
 from ultralytics import YOLO
+import torch
 
 # For some reason FSOCO images are surrounded by a black border of thickness 140, we remove this
 FSOCO_BORDER = 140
@@ -62,12 +70,6 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         os.mkdir(os.path.join(eval_dir, "dataset"))
         os.mkdir(train_image_dir)
         os.mkdir(train_label_dir)
-
-    # # Setup synthetic folder
-    # synthetic_folder = os.path.join(os.path.dirname(__file__), "synthetic_diffusion_input")
-    
-    # if not os.path.exists(synthetic_folder):
-    #     os.mkdir(synthetic_folder)
     
     # Get real world samples
     rw_image_dir = os.path.join(real_world_dir, "images")
@@ -104,7 +106,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         os.chdir(eval_step_dir) 
 
         # We can now train a YOLO network using the information we have so far
-        model = YOLO('yolov8m.yaml')
+        model = YOLO('yolov8s.pt')
         yaml = generate_yolo_yaml(dataset_dir)
 
         with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
@@ -130,7 +132,7 @@ def main() -> None:
 
     if args.random_seed is not None:
         random.seed(args.random_seed)
-        # TODO: torch random seed
+        torch.manual_seed(args.random_seed)
 
     if args.evaluation_type == "diffusion":
         print(f"Evaluating diffusion model {args.model_path}")

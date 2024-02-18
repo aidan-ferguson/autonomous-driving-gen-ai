@@ -8,6 +8,8 @@
 import argparse
 import os
 import random
+import datetime
+import shutil
 
 def synthetic_data_schedule(trail_idx: int, real_world_train_size: int) -> int:
     """
@@ -25,24 +27,49 @@ def train_yolo(epochs: int, data_dir: int):
     pass
 
 def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
-    # Setup synthetic folder
-    synthetic_folder = os.path.join(os.path.dirname(__file__), "synthetic_diffusion_input")
+    # Make folder to house our evaluation results
+    timestamp = datetime.datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
+    eval_dir = os.path.join(os.path.dirname(__file__), f"diffusion_evaluation_{timestamp}")
+    train_image_dir = os.path.join(eval_dir, "dataset", "images")
+    train_label_dir = os.path.join(eval_dir, "dataset", "labels")
+
+    if os.path.exists(eval_dir):
+        raise Exception(f"Evaluation folder '{eval_dir}' already exists, quitting")
+    else:
+        os.mkdir(eval_dir)
+
+    # # Setup synthetic folder
+    # synthetic_folder = os.path.join(os.path.dirname(__file__), "synthetic_diffusion_input")
     
-    if not os.path.exists(synthetic_folder):
-        os.mkdir(synthetic_folder)
+    # if not os.path.exists(synthetic_folder):
+    #     os.mkdir(synthetic_folder)
     
     # Get real world samples
     rw_image_dir = os.path.join(real_world_dir, "images")
     rw_label_dir = os.path.join(real_world_dir, "labels")
-    rw_ids = [elem for elem in os.listdir(rw_image_dir) if os.path.isfile(os.path.join(rw_image_dir, elem))]
-    # real_world_samples = 
-
+    rw_ids = [elem for elem in os.listdir(rw_image_dir) if os.path.isfile(os.path.join(rw_image_dir, elem))] 
+    
+    # Take N random images and find corresponding labels
     random.shuffle(rw_ids)
+    rw_images = rw_ids[:n_rw_samples]
+    rw_labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in rw_images]
 
-    print(rw_ids[:10])
+    # Copy the selected samples to the training folder in the generated evaluation folder
+    for image, label in zip(rw_images, rw_labels):
+        shutil.copyfile(os.path.join(rw_image_dir, image), os.path.join(train_image_dir, image))
+        shutil.copyfile(os.path.join(rw_label_dir, label), os.path.join(train_label_dir, label))
 
-    # for idx in range(10):
-    #     synthetic_count = synthetic_data_schedule(idx, 10)
+    synthetic_count = 0
+    for idx in range(10):
+        new_synthetic_count = synthetic_data_schedule(idx, 10)
+        if (new_synthetic_count - synthetic_count) > 0:
+            # We need to generate some images
+            for idx in range(synthetic_count, new_synthetic_count):
+                # Generate an image label pair using simulator mask & sim bounding box info 
+                pass
+        
+        # We can now train a YOLO network using the information we have so far
+        
         
 
 
@@ -51,14 +78,14 @@ def main() -> None:
     parser.add_argument('evaluation_type', choices=["gan", "diffusion"], help="Which type of network to evaluate")           
     parser.add_argument('model_path', help="Path to the model to be evaluated")
     parser.add_argument('real_world_dir', help="Directory containing the real world annotations in YOLO format")
-    parser.add_argument('--real_world_samples', default=100, help="How many real world samples should we include in the training dataset")
+    parser.add_argument('--real_world_samples', default=100, help="How many real world samples should we include in the training dataset (default 100)")
     parser.add_argument('--random_seed', type=int, default=None, help="Random seed for the evaluation, defaults to no seed")
     args = parser.parse_args()
     
     if not os.path.exists(args.model_path) or not os.path.isfile(args.model_path):
         raise Exception(f"Path '{args.model_path}' does not exist or is not a file") 
     
-    if not os.path.exits(args.real_world_dir):
+    if not os.path.exists(args.real_world_dir):
         raise Exception(f"The real world directory '{args.real_world_dir}' does not exist!")
 
     if args.random_seed is not None:

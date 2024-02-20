@@ -85,10 +85,6 @@ public class LoadTrack : MonoBehaviour
                     // Add a concave mesh collider, note must be non-convex to match the shape of the cone
                     MeshCollider meshCollider = obj.AddComponent<MeshCollider>();
                     meshCollider.convex = false;
-
-                    // Add a box collider but disable it, will be temporarily re-enabled when calculating bounding boxes
-                    BoxCollider box = obj.AddComponent<BoxCollider>();
-                    box.enabled = false;
                 }
             }
         }

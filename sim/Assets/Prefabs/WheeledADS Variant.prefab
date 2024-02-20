@@ -627,6 +627,7 @@ MonoBehaviour:
   imageHeight: 720
   captureImage: 0
   outputFolder: /home/aidan/dissertation/unity_frames
+  renderTexture: {fileID: 8400000, guid: f8007544b99a4dd0c9379c417a51b5b5, type: 2}
 --- !u!1 &6394319365112498530
 GameObject:
   m_ObjectHideFlags: 0

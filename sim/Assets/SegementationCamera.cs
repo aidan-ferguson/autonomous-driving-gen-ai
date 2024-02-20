@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 public class SemanticSegmentation : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class SemanticSegmentation : MonoBehaviour
     public int imageHeight = 480;
     public bool captureImage = false;
     public string outputFolder = "";
+    public RenderTexture renderTexture = null;
 
     private Camera cam;
     private Texture2D segmentationImage;
@@ -19,6 +21,7 @@ public class SemanticSegmentation : MonoBehaviour
     private Color orange_colour = new Color(255.0f/255.0f, 165.0f/255.0f, 0.0f/255.0f, 1.0f);
     private Color large_orange_colour = new Color(255.0f/255.0f, 69.0f/255.0f, 0.0f/255.0f, 1.0f);
     
+
 
     void Start()
     {
@@ -32,6 +35,8 @@ public class SemanticSegmentation : MonoBehaviour
         {
             if (outputFolder.Length != 0)
             {
+                // Save the rasterised camera view
+                CamCapture();
                 // Get and save a segmentation mask
                 RenderSegmentationImage();
                 // Get all the bounding boxes in the frame
@@ -41,28 +46,35 @@ public class SemanticSegmentation : MonoBehaviour
             else
             {
                 Debug.LogWarning("Output folder not entered");
+                Debug.LogWarning("Or has it...");
             }
         }
     }
 
-    Vector3[] GetColliderVertexPositions(GameObject obj) {
-            // This does not respect any rotations in the object and assumes it is lying on a flat plane
-            Vector3[] vertices = new Vector3[8];
-            Transform obj_transform = obj.transform;
-        
-            BoxCollider collider = obj.GetComponent<BoxCollider>();
-            Vector3 sz = collider.size/2.0f;
+    double clamp(double val, double min, double max)
+    {
+        return Math.Min(Math.Max(val, min), max);
+    }
 
-            vertices[0] = obj_transform.TransformPoint(collider.center + new Vector3(sz.x, sz.y, sz.z));
-            vertices[1] = obj_transform.TransformPoint(collider.center + new Vector3(-sz.x, sz.y, sz.z));
-            vertices[2] = obj_transform.TransformPoint(collider.center + new Vector3(sz.x, -sz.y, sz.z));
-            vertices[3] = obj_transform.TransformPoint(collider.center + new Vector3(-sz.x, -sz.y, sz.z));
-            vertices[4] = obj_transform.TransformPoint(collider.center + new Vector3(sz.x, sz.y, -sz.z));
-            vertices[5] = obj_transform.TransformPoint(collider.center + new Vector3(-sz.x, sz.y, -sz.z));
-            vertices[6] = obj_transform.TransformPoint(collider.center + new Vector3(sz.x, -sz.y, -sz.z));
-            vertices[7] = obj_transform.TransformPoint(collider.center + new Vector3(-sz.x, -sz.y, -sz.z));
+    void CamCapture()
+    {
+        // The Render Texture in RenderTexture.active is the one
+        // that will be read by ReadPixels.
+        var currentRT = RenderTexture.active;
+        RenderTexture.active = renderTexture;
 
-            return vertices;
+        // Render the camera's view.
+        cam.Render();
+
+        // Make a new texture and read the active Render Texture into it.
+        Texture2D image = new Texture2D(renderTexture.width, renderTexture.height);
+        image.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        image.Apply();
+
+        // Replace the original active Render Texture.
+        RenderTexture.active = currentRT;
+ 
+        System.IO.File.WriteAllBytes("/home/aidan/dissertation/unity_frames/sim.png", image.EncodeToPNG());
     }
 
     void SaveBoundingBoxes()
@@ -76,26 +88,36 @@ public class SemanticSegmentation : MonoBehaviour
             }
         }
 
+        List<string> yolo_annotation = new List<string>();
+
         foreach(GameObject cone in cones)
         {
-            // Turn on box colliders and turn off mesh colliders temporarily
-            cone.GetComponent<MeshCollider>().enabled = false;
-            cone.GetComponent<BoxCollider>().enabled = true;
-
             // Using the box collider calculate the 3D->2D projections for each corner and fit a BB around them
             double min_x = double.PositiveInfinity;
             double min_y = double.PositiveInfinity;
             double max_x = double.NegativeInfinity;
             double max_y = double.NegativeInfinity;
-            foreach(Vector3 vertex in GetColliderVertexPositions(cone))
+
+            // TODO: if the mesh stuff works, we can remove the multiple colliders
+            Mesh mesh = cone.GetComponent<MeshFilter>().mesh;
+            foreach(Vector3 local_vertex in mesh.vertices)
             {
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.transform.position = vertex;
-                sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-                Vector2 screen_point = cam.WorldToScreenPoint(vertex);
-                
+                Vector3 vertex = cone.transform.TransformPoint(local_vertex);
+
+                // GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                // sphere.transform.position = vertex;
+                // sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+                Vector3 screen_point = cam.WorldToViewportPoint(vertex);
+
+                screen_point.x *= imageWidth;
+                screen_point.y *= imageHeight;
+
                 // Go from (0,0) at bottom left to top left
-                // screen_point.y = imageHeight - screen_point.y;
+                screen_point.y = imageHeight - screen_point.y;
+                if(screen_point.z < 0)
+                {
+                    continue;
+                }
                 if (screen_point.x < min_x)
                 {
                     min_x = screen_point.x;
@@ -114,17 +136,57 @@ public class SemanticSegmentation : MonoBehaviour
                 }
             }
 
-            // Now we have our bounding box in min_x, ...
-            Debug.Log("found one");
-            Debug.Log(cone.transform.position);
-            Debug.Log(min_x);
-            Debug.Log(min_y);
-            Debug.Log(max_x - min_x);
-            Debug.Log(max_y - min_y);
+            // If box fully outside of image, skip this iteration
+            if(!(
+                (max_x < 0) || (max_y < 0) || (min_y > imageHeight) || (min_x > imageWidth) ||
+                ((min_x < 0) && (min_y < 0) && (max_x > imageWidth) && (max_y > imageHeight))
+            ))
+            {
+                // We may still have some bounding box corners outside of the screen, clamp all values to a valid range
+                min_x = clamp(min_x, 0, imageWidth);
+                max_x = clamp(max_x, 0, imageWidth);
+                min_y = clamp(min_y, 0, imageHeight);
+                max_y = clamp(max_y, 0, imageHeight);
 
-            cone.GetComponent<MeshCollider>().enabled = true;
-            cone.GetComponent<BoxCollider>().enabled = false;
+                // Now we have our bounding box in min_x, ...
+                // Save to array of strings in YOLO format
+                min_x /= imageWidth;
+                max_x /= imageWidth;
+                min_y /= imageHeight;
+                max_y /= imageHeight;
+
+                // Create YOLO annotation line
+                /*
+                    Note
+                    blue = 0
+                    orange = 1
+                    large_orange = 2
+                    yellow = 3
+                */
+                int class_id = 0;
+                if(cone.tag == "blue_cone")
+                {
+                    class_id = 0;
+                }
+                else if(cone.tag == "yellow_cone")
+                {
+                    class_id = 3;
+                }
+                else if(cone.tag == "large_orange_cone")
+                {
+                    class_id = 2;
+                }
+                else if(cone.tag == "orange_cone")
+                {
+                    class_id = 1;
+                }
+
+                string yolo_line = $"{class_id} {(max_x+min_x)/2} {(max_y+min_y)/2} {max_x-min_x} {max_y-min_y}";
+                yolo_annotation.Add(yolo_line);
+            }
         }
+
+        System.IO.File.WriteAllText("/home/aidan/dissertation/unity_frames/yolo.txt", string.Join("\n", yolo_annotation));
     }
 
     void RenderSegmentationImage()
@@ -165,13 +227,16 @@ public class SemanticSegmentation : MonoBehaviour
                 }
             }
         }
-        
-        // segmentationImage.Apply();
 
         byte[] bytes = segmentationImage.EncodeToPNG();
-        // if(!Directory.Exists(dirPath)) {
-        //     Directory.CreateDirectory(dirPath);
-        // }
         System.IO.File.WriteAllBytes(outputFolder + "/Image.png", bytes);
     }
+
+    void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        // We want to render to texture AND the screen, this will copy from the texture to the screen
+        Graphics.Blit(src, renderTexture);
+        Graphics.Blit(src, (RenderTexture)null);
+    }
+
 }

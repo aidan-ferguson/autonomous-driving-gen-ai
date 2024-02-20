@@ -85,6 +85,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
     for image, label in zip(rw_images, rw_labels):
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(rw_image_dir, image))
+        # TODO: this might be incorrect as normalised values -> pixel space may require size of image with borders?
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
         cv2.imwrite(os.path.join(train_image_dir, image), img)
         shutil.copyfile(os.path.join(rw_label_dir, label), os.path.join(train_label_dir, label))

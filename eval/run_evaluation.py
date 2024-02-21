@@ -88,7 +88,28 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         # TODO: this might be incorrect as normalised values -> pixel space may require size of image with borders?
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
         cv2.imwrite(os.path.join(train_image_dir, image), img)
-        shutil.copyfile(os.path.join(rw_label_dir, label), os.path.join(train_label_dir, label))
+
+        # Note, we cannot just copy the annotation as the annotation is only valid for the full image (with borders)
+        #   we must calculate a new label file
+        with open(os.path.join(rw_label_dir, label), "r") as file:
+            old_label = [list(map(float, line.split(' '))) for line in file.readlines()]
+
+        # Multiply out by full image size, then re-normalise
+        for ann_idx in range(len(old_label)):
+            # Change class back to int
+            old_label[ann_idx][0] = int(old_label[ann_idx][0])
+
+            old_label[ann_idx][1] = ((old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[1]
+            old_label[ann_idx][2] = ((old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[0]
+            old_label[ann_idx][3] = ((old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[1]
+            old_label[ann_idx][4] = ((old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[0]
+
+        # Now write out new file with corrected annotations
+        with open(os.path.join(train_label_dir, label), "w") as file:
+            label = [' '.join(ann) for ann in old_label]
+            file.write('\n'.join(label))
+
+        # shutil.copyfile(, os.path.join(train_label_dir, label))
 
     synthetic_count = 0
     for idx in range(10):

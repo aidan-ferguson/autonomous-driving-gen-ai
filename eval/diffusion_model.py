@@ -19,7 +19,7 @@ save_memory = False
 
 class DiffusionModel():
     def __init__(self, model_path: str):
-        self.model = create_model('./models/cldm_v15.yaml').cpu()
+        self.model = create_model(os.path.join(__file__, '../ldm/ControlNet/models/cldm_v15.yaml')).cpu()
         self.model.load_state_dict(load_state_dict(model_path, location='cuda'))
         self.model = self.model.cuda()
         self.ddim_sampler = DDIMSampler(self.model)

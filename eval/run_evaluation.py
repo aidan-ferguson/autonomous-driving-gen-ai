@@ -107,7 +107,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
 
             # Re-normalise in cropped image space
             x1 /= img.shape[1]
-            x2 /= img.shape[0]
+            y1 /= img.shape[0]
             width /= img.shape[1]
             height /= img.shape[0]
 

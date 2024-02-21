@@ -144,7 +144,7 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
                 # Generate an image label pair using simulator mask & sim bounding box info
                 mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
                 mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
-                sample = diffusion_model.forward(mask, samples=1)[0]
+                sample = diffusion_model.forward(mask, n_samples=1)[0]
                 cv2.imwrite(os.path.join(train_image_dir, f"sampled_frame_{sample_idx}.png"), sample)
                 shutil.copyfile(
                     os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"),

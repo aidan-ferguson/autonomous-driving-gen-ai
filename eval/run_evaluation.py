@@ -145,7 +145,7 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
                 mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
                 mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
                 sample = diffusion_model.forward(mask, n_samples=1)[0]
-                cv2.imwrite(os.path.join(train_image_dir, f"sampled_frame_{sample_idx}.png"), sample)
+                cv2.imwrite(os.path.join(train_image_dir, f"sampled_frame_{sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
                 shutil.copyfile(
                     os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"),
                     os.path.join(train_label_dir, f"sampled_frame_{sample_idx}.txt")

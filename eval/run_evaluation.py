@@ -99,10 +99,20 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
             # Change class back to int
             old_label[ann_idx][0] = int(old_label[ann_idx][0])
 
-            old_label[ann_idx][1] = ((old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[1]
-            old_label[ann_idx][2] = ((old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[0]
-            old_label[ann_idx][3] = ((old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[1]
-            old_label[ann_idx][4] = ((old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER) / img.shape[0]
+            x1 = (old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2)))
+            y1 = (old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2)))
+            x2 = x1 + (old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2)))
+            y2 = y1 + (old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2)))
+
+            x1 = (x1 - FSOCO_BORDER) / img.shape[0]
+            y1 = (y1 - FSOCO_BORDER) / img.shape[1]
+            x2 = (x2 - FSOCO_BORDER) / img.shape[0]
+            y2 = (y2 - FSOCO_BORDER) / img.shape[1]
+
+            old_label[ann_idx][1] = x1
+            old_label[ann_idx][2] = y1
+            old_label[ann_idx][3] = x2 - x1
+            old_label[ann_idx][4] = y2 - y1
 
         # Now write out new file with corrected annotations
         with open(os.path.join(train_label_dir, label), "w") as file:

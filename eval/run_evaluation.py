@@ -106,7 +106,7 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
 
         # Now write out new file with corrected annotations
         with open(os.path.join(train_label_dir, label), "w") as file:
-            label = [' '.join(ann) for ann in old_label]
+            label = [' '.join(list(map(str, ann))) for ann in old_label]
             file.write('\n'.join(label))
 
         # shutil.copyfile(, os.path.join(train_label_dir, label))

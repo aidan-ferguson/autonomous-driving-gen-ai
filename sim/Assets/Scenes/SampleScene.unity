@@ -254,7 +254,7 @@ MonoBehaviour:
   largeOrangePrefab: {fileID: 919132149155446097, guid: 30cfa3d4c91cbce439964ea6123b8280, type: 3}
   orangePrefab: {fileID: 5771667801065169173, guid: 8e9e79c74ff5de50fb03df0bdf49ff28, type: 3}
   carPrefab: {fileID: 3173289215859455779, guid: 8b43ed545dedd6c7a92ffcec5958666b, type: 3}
-  csvFilePath: /home/aidan/ugrdv/ros2_ws/src/eufs_sim/eufs_tracks/csv/skidpad.csv
+  csvFilePath: /home/aidan/ugrdv/ros2_ws/src/eufs_sim/eufs_tracks/csv/acceleration.csv
 --- !u!64 &1607675220
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -337,7 +337,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 8.222474, y: 1, z: 8.742703}
+  m_LocalScale: {x: 11, y: 1, z: 11}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}

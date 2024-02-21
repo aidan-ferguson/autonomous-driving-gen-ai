@@ -136,7 +136,8 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
     for idx in range(10):
         print(f"Evaluation step {idx}")
 
-        new_synthetic_count = synthetic_data_schedule(idx, 10)
+        new_synthetic_count = synthetic_data_schedule(idx, n_rw_samples)
+        print(f"{new_synthetic_count=}")
         if (new_synthetic_count - synthetic_count) > 0:
             # We need to generate some images
             for sample_idx in range(synthetic_count, new_synthetic_count):
@@ -156,13 +157,13 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
         os.chdir(eval_step_dir)
 
         # We can now train a YOLO network using the information we have so far
-        model = YOLO('yolov8s.pt')
-        yaml = generate_yolo_yaml(dataset_dir)
+        # model = YOLO('yolov8s.pt')
+        # yaml = generate_yolo_yaml(dataset_dir)
 
-        with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
-            file.write(yaml)
+        # with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
+        #     file.write(yaml)
 
-        results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=256, verbose=False)
+        # results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=256, verbose=False)
 
 
 def main() -> None:

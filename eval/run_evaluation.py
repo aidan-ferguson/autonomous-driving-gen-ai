@@ -99,20 +99,22 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
             # Change class back to int
             old_label[ann_idx][0] = int(old_label[ann_idx][0])
 
-            x1 = (old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2)))
-            y1 = (old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2)))
-            x2 = x1 + (old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2)))
-            y2 = y1 + (old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2)))
+            # Convert from old image normalised space to cropped image pixel space
+            x1 = (old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER
+            y1 = (old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER
+            width = (old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2)))
+            height = (old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2)))
 
-            x1 = (x1 - FSOCO_BORDER) / img.shape[0]
-            y1 = (y1 - FSOCO_BORDER) / img.shape[1]
-            x2 = (x2 - FSOCO_BORDER) / img.shape[0]
-            y2 = (y2 - FSOCO_BORDER) / img.shape[1]
+            # Re-normalise in cropped image space
+            x1 /= img.shape[1]
+            x2 /= img.shape[0]
+            width /= img.shape[1]
+            height /= img.shape[0]
 
             old_label[ann_idx][1] = x1
             old_label[ann_idx][2] = y1
-            old_label[ann_idx][3] = x2 - x1
-            old_label[ann_idx][4] = y2 - y1
+            old_label[ann_idx][3] = width
+            old_label[ann_idx][4] = height
 
         # Now write out new file with corrected annotations
         with open(os.path.join(train_label_dir, label), "w") as file:

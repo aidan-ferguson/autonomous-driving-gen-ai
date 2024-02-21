@@ -9,7 +9,7 @@
 #       root
 #         > images                          (e.g. frame_0.png)
 #         > masks                           (e.g. frame_0_mask.png)
-#         > labels (in .txt YOLO format)    (e.g. frame_0.txt)
+#         > labels (in .txt YOLO format)    (e.g. frame_0_yolo.txt)
 #
 
 import argparse
@@ -70,6 +70,9 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
     dataset_dir = os.path.join(eval_dir, "dataset")
     train_image_dir = os.path.join(dataset_dir, "images")
     train_label_dir = os.path.join(dataset_dir, "labels")
+
+    sim_mask_dir = os.path.join(sim_frame_dir, "masks")
+    sim_label_dir = os.path.join(sim_frame_dir, "labels")
 
     if os.path.exists(eval_dir):
         raise Exception(f"Evaluation folder '{eval_dir}' already exists, quitting")
@@ -138,7 +141,14 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
             # We need to generate some images
             for sample_idx in range(synthetic_count, new_synthetic_count):
                 # Generate an image label pair using simulator mask & sim bounding box info
-                pass
+                mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
+                mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
+                sample = diffusion_model.forward(mask, samples=1)[0]
+                cv2.imwrite(os.path.join(train_image_dir, f"sampled_frame_{sample_idx}.png"), sample)
+                shutil.copyfile(
+                    os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"),
+                    os.path.join(train_label_dir, f"sampled_frame_{sample_idx}.txt")
+                )
         
         # YOLO training outputs a folder called 'runs' in the current working dir, so chdir into the iteration
         eval_step_dir = os.path.join(eval_dir, f"evaluation_step_{idx}")

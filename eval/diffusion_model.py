@@ -1,7 +1,7 @@
 # Add ControlNet folder to path and import 
 import sys
 import os
-sys.path.insert(1, os.path.join(os.path.dirname(__file__), "../ldm/ControlNet"))
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), ".."))
 
 import cv2
 import einops

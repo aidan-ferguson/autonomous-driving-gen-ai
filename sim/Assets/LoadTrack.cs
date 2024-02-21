@@ -60,8 +60,7 @@ public class LoadTrack : MonoBehaviour
                 else if(type == "orange")
                 {
                     position.y += 0.03f;
-                    // Note, I have no good orange cone mesh - so this is a placeholder - the segmentation will still be correct
-                    obj = Instantiate(yellowConePrefab, position, Quaternion.Euler(-90, 0, 0));
+                    obj = Instantiate(orangePrefab, position, Quaternion.Euler(-90, 0, 0));
                     obj.tag = "orange_cone";
                 }
                 else if(type == "big_orange")

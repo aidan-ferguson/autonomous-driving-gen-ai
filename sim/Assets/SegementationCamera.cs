@@ -8,6 +8,7 @@ public class SemanticSegmentation : MonoBehaviour
     public int imageWidth = 640;
     public int imageHeight = 480;
     public bool captureImage = false;
+    public int frameCounter = 0;
     public string outputFolder = "";
     public RenderTexture renderTexture = null;
 
@@ -42,11 +43,7 @@ public class SemanticSegmentation : MonoBehaviour
                 // Get all the bounding boxes in the frame
                 SaveBoundingBoxes();
                 captureImage = false;
-            }
-            else
-            {
-                Debug.LogWarning("Output folder not entered");
-                Debug.LogWarning("Or has it...");
+                frameCounter++;
             }
         }
     }
@@ -74,7 +71,7 @@ public class SemanticSegmentation : MonoBehaviour
         // Replace the original active Render Texture.
         RenderTexture.active = currentRT;
  
-        System.IO.File.WriteAllBytes("/home/aidan/dissertation/unity_frames/sim.png", image.EncodeToPNG());
+        System.IO.File.WriteAllBytes($"{outputFolder}/frame_{frameCounter}.png", image.EncodeToPNG());
     }
 
     void SaveBoundingBoxes()
@@ -186,7 +183,7 @@ public class SemanticSegmentation : MonoBehaviour
             }
         }
 
-        System.IO.File.WriteAllText("/home/aidan/dissertation/unity_frames/yolo.txt", string.Join("\n", yolo_annotation));
+        System.IO.File.WriteAllText($"{outputFolder}/frame_{frameCounter}_yolo.txt", string.Join("\n", yolo_annotation));
     }
 
     void RenderSegmentationImage()
@@ -229,7 +226,7 @@ public class SemanticSegmentation : MonoBehaviour
         }
 
         byte[] bytes = segmentationImage.EncodeToPNG();
-        System.IO.File.WriteAllBytes(outputFolder + "/Image.png", bytes);
+        System.IO.File.WriteAllBytes($"{outputFolder}/frame_{frameCounter}_mask.png", bytes);
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)

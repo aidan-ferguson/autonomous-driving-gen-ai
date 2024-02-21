@@ -252,9 +252,9 @@ MonoBehaviour:
   yellowConePrefab: {fileID: 919132149155446097, guid: 60b8eff9095a43e48bf4b45faa431e83, type: 3}
   blueConePrefab: {fileID: 919132149155446097, guid: 606e112d9b342c50995f1e7413da0b41, type: 3}
   largeOrangePrefab: {fileID: 919132149155446097, guid: 30cfa3d4c91cbce439964ea6123b8280, type: 3}
-  orangePrefab: {fileID: 919132149155446097, guid: 01d5a7ef63a45cfb6b8072c9061aa24e, type: 3}
+  orangePrefab: {fileID: 5771667801065169173, guid: 8e9e79c74ff5de50fb03df0bdf49ff28, type: 3}
   carPrefab: {fileID: 3173289215859455779, guid: 8b43ed545dedd6c7a92ffcec5958666b, type: 3}
-  csvFilePath: /home/aidan/ugrdv/ros2_ws/src/eufs_sim/eufs_tracks/csv/small_track.csv
+  csvFilePath: /home/aidan/ugrdv/ros2_ws/src/eufs_sim/eufs_tracks/csv/skidpad.csv
 --- !u!64 &1607675220
 MeshCollider:
   m_ObjectHideFlags: 0

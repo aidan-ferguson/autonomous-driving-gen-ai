@@ -7,9 +7,9 @@
 #
 #   the simulator data folder must be structure like:
 #       root
-#         > simulator images                (e.g. sim_frame_0.png)
-#         > simulator masks                 (e.g. sim_frame_0_mask.png)
-#         > labels (in .txt YOLO format)    (e.g. sim_frame_0.txt)
+#         > images                          (e.g. frame_0.png)
+#         > masks                           (e.g. frame_0_mask.png)
+#         > labels (in .txt YOLO format)    (e.g. frame_0.txt)
 #
 
 import argparse
@@ -20,6 +20,12 @@ import shutil
 import cv2
 from ultralytics import YOLO
 import torch
+from numpy.typing import NDArray
+
+from diffusion_model import DiffusionModel
+
+# Cluster permissions
+os.umask(0o002)
 
 # For some reason FSOCO images are surrounded by a black border of thickness 140, we remove this
 FSOCO_BORDER = 140
@@ -55,7 +61,9 @@ def synthetic_data_schedule(trail_idx: int, real_world_train_size: int) -> int:
 def train_yolo(epochs: int, data_dir: int):
     pass
 
-def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
+def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
+    diffusion_model = DiffusionModel(model_path)
+
     # Make folder to house our evaluation results
     timestamp = datetime.datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
     eval_dir = os.path.join(os.path.dirname(__file__), f"diffusion_evaluation_{timestamp}")
@@ -121,8 +129,6 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
             label = [' '.join(list(map(str, ann))) for ann in old_label]
             file.write('\n'.join(label))
 
-        # shutil.copyfile(, os.path.join(train_label_dir, label))
-
     synthetic_count = 0
     for idx in range(10):
         print(f"Evaluation step {idx}")
@@ -131,13 +137,13 @@ def evaluate_diffusion_model(real_world_dir: str, n_rw_samples: int) -> None:
         if (new_synthetic_count - synthetic_count) > 0:
             # We need to generate some images
             for sample_idx in range(synthetic_count, new_synthetic_count):
-                # Generate an image label pair using simulator mask & sim bounding box info 
+                # Generate an image label pair using simulator mask & sim bounding box info
                 pass
         
         # YOLO training outputs a folder called 'runs' in the current working dir, so chdir into the iteration
         eval_step_dir = os.path.join(eval_dir, f"evaluation_step_{idx}")
         os.mkdir(eval_step_dir)
-        os.chdir(eval_step_dir) 
+        os.chdir(eval_step_dir)
 
         # We can now train a YOLO network using the information we have so far
         model = YOLO('yolov8s.pt')
@@ -154,6 +160,7 @@ def main() -> None:
     parser.add_argument('evaluation_type', choices=["gan", "diffusion"], help="Which type of network to evaluate")           
     parser.add_argument('model_path', help="Path to the model to be evaluated")
     parser.add_argument('real_world_dir', help="Directory containing the real world annotations in YOLO format")
+    parser.add_argument('sim_frame_dir', help="Directory containing simulator frames used to inference the model being evaluated")
     parser.add_argument('--real_world_samples', default=100, help="How many real world samples should we include in the training dataset (default 100)")
     parser.add_argument('--random_seed', type=int, default=None, help="Random seed for the evaluation, defaults to no seed")
     args = parser.parse_args()
@@ -163,6 +170,9 @@ def main() -> None:
     
     if not os.path.exists(args.real_world_dir):
         raise Exception(f"The real world directory '{args.real_world_dir}' does not exist!")
+    
+    if not os.path.exists(args.sim_frame_dir):
+        raise Exception(f"The simulator frames dir '{args.sim_frame_dir}' does not exist!")
 
     if args.random_seed is not None:
         random.seed(args.random_seed)
@@ -170,7 +180,7 @@ def main() -> None:
 
     if args.evaluation_type == "diffusion":
         print(f"Evaluating diffusion model {args.model_path}")
-        evaluate_diffusion_model(args.real_world_dir, args.real_world_samples)
+        evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.real_world_samples)
     elif args.evaluation_type == "gan":
         print(f"Evaluating GAN model {args.model_path}")
 

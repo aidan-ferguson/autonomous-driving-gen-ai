@@ -1,0 +1,3 @@
+[submodule "ldm/ControlNet"]
+	path = ldm/ControlNet
+	url = https://gitlab.com/aidan-ferguson/ControlNet.git

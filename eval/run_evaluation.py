@@ -150,6 +150,7 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
                     os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"),
                     os.path.join(train_label_dir, f"sampled_frame_{sample_idx}.txt")
                 )
+            synthetic_count = new_synthetic_count
         
         # YOLO training outputs a folder called 'runs' in the current working dir, so chdir into the iteration
         eval_step_dir = os.path.join(eval_dir, f"evaluation_step_{idx}")

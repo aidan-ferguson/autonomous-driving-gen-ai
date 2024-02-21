@@ -1,7 +1,7 @@
 # Add ControlNet folder to path and import 
 import sys
 import os
-sys.path.insert(1, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), "../ldm/ControlNet"))
 
 import cv2
 import einops
@@ -10,10 +10,10 @@ import torch
 import random
 
 
-from ldm.ControlNet.share import *
+from share import *
 from pytorch_lightning import seed_everything
-from ldm.ControlNet.cldm.model import create_model, load_state_dict
-from ldm.ControlNet.cldm.ddim_hacked import DDIMSampler
+from cldm.model import create_model, load_state_dict
+from cldm.ddim_hacked import DDIMSampler
 
 save_memory = False
 

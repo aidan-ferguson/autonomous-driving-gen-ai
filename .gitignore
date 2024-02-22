@@ -54,3 +54,6 @@ trainB
 
 # Python virtual envs
 venv
+
+# YOLO traininng datasets
+yolo_dataset

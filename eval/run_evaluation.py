@@ -160,7 +160,7 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
 
                 # Copy over sampled frame bounding boxes but remove bounding boxes with width or height less than some threshold
                 with open(os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"), "r") as source_file:
-                    with open(os.path.join(train_label_dir, f"sampled_frame_{sample_idx}.txt"), "r") as dest_file:
+                    with open(os.path.join(train_label_dir, f"sampled_frame_{sample_idx}.txt"), "w") as dest_file:
                         label = [list(map(float, line.split(' '))) for line in source_file.readlines()]
                         excluded_indices = []
                         for idx in range(list(label)):

@@ -14,10 +14,10 @@
 
 import argparse
 import os
-import random
 import cv2
 from ultralytics import YOLO
 from numpy.typing import NDArray
+from tqdm import tqdm
 
 # Cluster permissions
 os.umask(0o002)
@@ -63,11 +63,8 @@ def train_yolo(src_dataset_dir: str, epochs: int) -> None:
     images = [elem for elem in os.listdir(src_image_dir) if os.path.isfile(os.path.join(src_image_dir, elem))] 
     labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in images]
 
-    print(images)
-    print(labels)
-
     # Copy the selected samples to the new YOLO dataset, removing FSOCO border as we go
-    for image, label in zip(images, labels):
+    for image, label in tqdm(zip(images, labels)):
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(src_image_dir, image))
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
@@ -110,14 +107,14 @@ def train_yolo(src_dataset_dir: str, epochs: int) -> None:
             label = [' '.join(list(map(str, ann))) for idx, ann in enumerate(old_label) if idx not in excluded_indices]
             file.write('\n'.join(label))
 
-        # We can now train a YOLO network using the information we have so far
-        model = YOLO('yolov8x.pt')
-        yaml = generate_yolo_yaml(dataset_dir)
+    # We can now train a YOLO network using the information we have so far
+    model = YOLO('yolov8x.pt')
+    yaml = generate_yolo_yaml(dataset_dir)
 
-        with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
-            file.write(yaml)
+    with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
+        file.write(yaml)
 
-        model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=epochs, imgsz=YOLO_INPUT_SIZE, verbose=True)
+    model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=epochs, imgsz=YOLO_INPUT_SIZE, verbose=True)
 
 
 def main() -> None:

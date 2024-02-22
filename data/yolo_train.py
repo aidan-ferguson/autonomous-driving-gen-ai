@@ -123,7 +123,7 @@ def main() -> None:
     parser.add_argument('--epochs', default=150, type=int, help="Number of epochs to train for")
     args = parser.parse_args()
     
-    if not os.path.exists(args.real_world_dir):
+    if not os.path.exists(args.fsoco_dir):
         raise Exception(f"The real world directory '{args.fsoco_dir}' does not exist!")
 
     train_yolo(args.fsoco_dir, args.epochs)

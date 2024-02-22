@@ -163,7 +163,7 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
                     with open(os.path.join(train_label_dir, f"sampled_frame_{sample_idx}.txt"), "w") as dest_file:
                         label = [list(map(float, line.split(' '))) for line in source_file.readlines()]
                         excluded_indices = []
-                        for idx in range(list(label)):
+                        for idx in range(len(label)):
                             label[idx][0] = int(label[idx][0])
                             if (label[idx][3]*YOLO_INPUT_SIZE < BB_THRESHOLD) or (label[idx][4]*YOLO_INPUT_SIZE < BB_THRESHOLD):
                                 excluded_indices.append(idx)

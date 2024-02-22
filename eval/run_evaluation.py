@@ -169,7 +169,7 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
                                 excluded_indices.append(idx)
 
                         label = [row for idx, row in enumerate(label) if idx not in excluded_indices]
-                        dest_file.write('\n'.join(' '.join([list(map(str, row)) for row in label])))
+                        dest_file.write('\n'.join([' '.join(list(map(str, row))) for row in label]))
 
 
             synthetic_count = new_synthetic_count

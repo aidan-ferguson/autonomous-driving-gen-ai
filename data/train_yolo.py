@@ -63,6 +63,9 @@ def train_yolo(src_dataset_dir: str, epochs: int) -> None:
     images = [elem for elem in os.listdir(src_image_dir) if os.path.isfile(os.path.join(src_image_dir, elem))] 
     labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in images]
 
+    print(images)
+    print(labels)
+
     # Copy the selected samples to the new YOLO dataset, removing FSOCO border as we go
     for image, label in zip(images, labels):
         # FSOCO dataset has a border of 140px around the image - remove this 

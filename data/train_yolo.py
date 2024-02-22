@@ -48,13 +48,14 @@ names:
 def train_yolo(src_dataset_dir: str, epochs: int) -> None:
     # Make folder to house the dataset results
     dataset_dir = os.path.join(os.path.dirname(__file__), "yolo_dataset")
-    os.mkdir(dataset_dir)
     
     train_image_dir = os.path.join(dataset_dir, "images")
     train_label_dir = os.path.join(dataset_dir, "labels")
 
-    os.mkdir(train_image_dir)
-    os.mkdir(train_label_dir)
+    if not os.path.exists(dataset_dir):
+        os.mkdir(dataset_dir)
+        os.mkdir(train_image_dir)
+        os.mkdir(train_label_dir)
 
     # Get real world samples
     src_image_dir = os.path.join(src_dataset_dir, "images")

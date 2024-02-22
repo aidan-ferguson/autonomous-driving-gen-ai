@@ -198,7 +198,7 @@ def main() -> None:
     parser.add_argument('model_path', help="Path to the model to be evaluated")
     parser.add_argument('real_world_dir', help="Directory containing the real world annotations in YOLO format")
     parser.add_argument('sim_frame_dir', help="Directory containing simulator frames used to inference the model being evaluated")
-    parser.add_argument('--real_world_samples', default=100, help="How many real world samples should we include in the training dataset (default 100)")
+    parser.add_argument('--real_world_samples', type=int, default=100, help="How many real world samples should we include in the training dataset (default 100)")
     parser.add_argument('--random_seed', type=int, default=None, help="Random seed for the evaluation, defaults to no seed")
     args = parser.parse_args()
     

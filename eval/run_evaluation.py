@@ -31,7 +31,7 @@ os.umask(0o002)
 FSOCO_BORDER = 140
 
 # How small either the width or height of bounding boxes can be and still be included in the training data (in pixels)
-BB_THRESHOLD = 10
+BB_THRESHOLD = 5
 
 # What size of image should the YOLO network accept
 YOLO_INPUT_SIZE = 256

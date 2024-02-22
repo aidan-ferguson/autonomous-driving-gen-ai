@@ -60,11 +60,11 @@ def train_yolo(src_dataset_dir: str, epochs: int) -> None:
     src_image_dir = os.path.join(src_dataset_dir, "images")
     src_label_dir = os.path.join(src_dataset_dir, "labels")
     
-    rw_images = [elem for elem in os.listdir(src_image_dir) if os.path.isfile(os.path.join(src_image_dir, elem))] 
-    rw_labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in rw_images]
+    images = [elem for elem in os.listdir(src_image_dir) if os.path.isfile(os.path.join(src_image_dir, elem))] 
+    labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in images]
 
     # Copy the selected samples to the new YOLO dataset, removing FSOCO border as we go
-    for image, label in zip(rw_images, rw_labels):
+    for image, label in zip(images, labels):
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(src_image_dir, image))
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
@@ -94,8 +94,8 @@ def train_yolo(src_dataset_dir: str, epochs: int) -> None:
             width /= img.shape[1]
             height /= img.shape[0]
 
-            if (width*YOLO_INPUT_SIZE < BB_THRESHOLD) or (height*YOLO_INPUT_SIZE < BB_THRESHOLD):
-                excluded_indices.append(ann_idx)
+            # if (width*YOLO_INPUT_SIZE < BB_THRESHOLD) or (height*YOLO_INPUT_SIZE < BB_THRESHOLD):
+            #     excluded_indices.append(ann_idx)
 
             old_label[ann_idx][1] = x1
             old_label[ann_idx][2] = y1

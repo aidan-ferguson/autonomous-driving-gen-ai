@@ -36,6 +36,8 @@ BB_THRESHOLD = 5
 # What size of image should the YOLO network accept
 YOLO_INPUT_SIZE = 256
 
+TEST_SIZE = 100
+
 def generate_yolo_yaml(dataset_dir: str):
     return f"""
 path: {dataset_dir}
@@ -48,7 +50,6 @@ names:
   1: orange
   2: largeorange
   3: yellow
-  4: unknown
 """
     
 
@@ -67,42 +68,33 @@ def synthetic_data_schedule(trail_idx: int, real_world_train_size: int) -> int:
 def train_yolo(epochs: int, data_dir: int):
     pass
 
-def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
-    diffusion_model = DiffusionModel(model_path)
+def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_samples: list[str] = []) -> list[str]:
+    """
+    Will copy data and filter/format it
+    """
 
-    # Make folder to house our evaluation results
-    timestamp = datetime.datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
-    eval_dir = os.path.join(os.path.dirname(__file__), f"diffusion_evaluation_{timestamp}")
-    dataset_dir = os.path.join(eval_dir, "dataset")
-    train_image_dir = os.path.join(dataset_dir, "images")
-    train_label_dir = os.path.join(dataset_dir, "labels")
+    train_image_dir = os.path.join(dst_folder, "images")
+    train_label_dir = os.path.join(dst_folder, "labels")
 
-    sim_mask_dir = os.path.join(sim_frame_dir, "masks")
-    sim_label_dir = os.path.join(sim_frame_dir, "labels")
-
-    if os.path.exists(eval_dir):
-        raise Exception(f"Evaluation folder '{eval_dir}' already exists, quitting")
-    else:
-        os.mkdir(eval_dir)
-        os.mkdir(os.path.join(eval_dir, "dataset"))
+    if not os.path.exists(train_image_dir):
         os.mkdir(train_image_dir)
+    if not os.path.exists(train_label_dir):
         os.mkdir(train_label_dir)
-    
+
     # Get real world samples
-    rw_image_dir = os.path.join(real_world_dir, "images")
-    rw_label_dir = os.path.join(real_world_dir, "labels")
-    rw_ids = [elem for elem in os.listdir(rw_image_dir) if os.path.isfile(os.path.join(rw_image_dir, elem))] 
+    rw_image_dir = os.path.join(src_folder, "images")
+    rw_label_dir = os.path.join(src_folder, "labels")
+    rw_ids = [elem for elem in os.listdir(rw_image_dir) if os.path.isfile(os.path.join(rw_image_dir, elem)) and elem not in excluded_samples] 
     
     # Take N random images and find corresponding labels
     random.shuffle(rw_ids)
-    rw_images = rw_ids[:n_rw_samples]
+    rw_images = rw_ids[:n_samples]
     rw_labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in rw_images]
 
     # Copy the selected samples to the training folder in the generated evaluation folder
     for image, label in zip(rw_images, rw_labels):
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(rw_image_dir, image))
-        # TODO: this might be incorrect as normalised values -> pixel space may require size of image with borders?
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
         cv2.imwrite(os.path.join(train_image_dir, image), img)
 
@@ -143,6 +135,36 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
             label = [' '.join(list(map(str, ann))) for idx, ann in enumerate(old_label) if idx not in excluded_indices]
             file.write('\n'.join(label))
 
+    return rw_ids
+
+
+
+def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
+    diffusion_model = DiffusionModel(model_path)
+
+    # Make folder to house our evaluation results
+    timestamp = datetime.datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
+    eval_dir = os.path.join(os.path.dirname(__file__), f"diffusion_evaluation_{timestamp}")
+    dataset_dir = os.path.join(eval_dir, "dataset")
+
+    test_dataset_dir = os.path.join(dataset_dir, "test")
+
+    sim_mask_dir = os.path.join(sim_frame_dir, "masks")
+    sim_label_dir = os.path.join(sim_frame_dir, "labels")
+
+    if os.path.exists(eval_dir):
+        raise Exception(f"Evaluation folder '{eval_dir}' already exists, quitting")
+    else:
+        os.mkdir(eval_dir)
+        os.mkdir(dataset_dir)
+        os.mkdir(test_dataset_dir)
+    
+    # Generate train dataset
+    train_ids = copy_fsoco_data(real_world_dir, dataset_dir, n_rw_samples)
+    
+    # Generate distinct test dataset
+    copy_fsoco_data(real_world_dir, test_dataset_dir, TEST_SIZE, excluded_samples=train_ids)
+
     synthetic_count = 0
     for idx in range(10):
         print(f"Evaluation step {idx}")
@@ -156,11 +178,11 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
                 mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
                 mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
                 sample = diffusion_model.forward(mask, n_samples=1)[0]
-                cv2.imwrite(os.path.join(train_image_dir, f"sampled_frame_{sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
+                cv2.imwrite(os.path.join(os.path.join(dataset_dir, "images"), f"sampled_frame_{sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
 
                 # Copy over sampled frame bounding boxes but remove bounding boxes with width or height less than some threshold
                 with open(os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"), "r") as source_file:
-                    with open(os.path.join(train_label_dir, f"sampled_frame_{sample_idx}.txt"), "w") as dest_file:
+                    with open(os.path.join(os.path.join(dataset_dir, "labels"), f"sampled_frame_{sample_idx}.txt"), "w") as dest_file:
                         label = [list(map(float, line.split(' '))) for line in source_file.readlines()]
                         excluded_indices = []
                         for idx in range(len(label)):

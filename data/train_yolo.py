@@ -57,56 +57,56 @@ def train_yolo(src_dataset_dir: str, epochs: int) -> None:
         os.mkdir(train_image_dir)
         os.mkdir(train_label_dir)
 
-    # Get real world samples
-    src_image_dir = os.path.join(src_dataset_dir, "images")
-    src_label_dir = os.path.join(src_dataset_dir, "labels")
-    
-    images = [elem for elem in os.listdir(src_image_dir) if os.path.isfile(os.path.join(src_image_dir, elem))] 
-    labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in images]
+        # Get real world samples
+        src_image_dir = os.path.join(src_dataset_dir, "images")
+        src_label_dir = os.path.join(src_dataset_dir, "labels")
+        
+        images = [elem for elem in os.listdir(src_image_dir) if os.path.isfile(os.path.join(src_image_dir, elem))] 
+        labels = [f"{'.'.join(image.split('.')[:-1])}.txt" for image in images]
 
-    # Copy the selected samples to the new YOLO dataset, removing FSOCO border as we go
-    for image, label in tqdm(zip(images, labels)):
-        # FSOCO dataset has a border of 140px around the image - remove this 
-        img = cv2.imread(os.path.join(src_image_dir, image))
-        img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
-        cv2.imwrite(os.path.join(train_image_dir, image), img)
+        # Copy the selected samples to the new YOLO dataset, removing FSOCO border as we go
+        for image, label in tqdm(zip(images, labels)):
+            # FSOCO dataset has a border of 140px around the image - remove this 
+            img = cv2.imread(os.path.join(src_image_dir, image))
+            img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
+            cv2.imwrite(os.path.join(train_image_dir, image), img)
 
-        # Note, we cannot just copy the annotation as the annotation is only valid for the full image (with borders)
-        #   we must calculate a new label file
-        with open(os.path.join(src_label_dir, label), "r") as file:
-            old_label = [list(map(float, line.split(' '))) for line in file.readlines()]
+            # Note, we cannot just copy the annotation as the annotation is only valid for the full image (with borders)
+            #   we must calculate a new label file
+            with open(os.path.join(src_label_dir, label), "r") as file:
+                old_label = [list(map(float, line.split(' '))) for line in file.readlines()]
 
-        excluded_indices = []
+            excluded_indices = []
 
-        # Multiply out by full image size, then re-normalise
-        for ann_idx in range(len(old_label)):
-            # Change class back to int
-            old_label[ann_idx][0] = int(old_label[ann_idx][0])
+            # Multiply out by full image size, then re-normalise
+            for ann_idx in range(len(old_label)):
+                # Change class back to int
+                old_label[ann_idx][0] = int(old_label[ann_idx][0])
 
-            # Convert from old image normalised space to cropped image pixel space
-            x1 = (old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER
-            y1 = (old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER
-            width = (old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2)))
-            height = (old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2)))
+                # Convert from old image normalised space to cropped image pixel space
+                x1 = (old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER
+                y1 = (old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER
+                width = (old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2)))
+                height = (old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2)))
 
-            # Re-normalise in cropped image space
-            x1 /= img.shape[1]
-            y1 /= img.shape[0]
-            width /= img.shape[1]
-            height /= img.shape[0]
+                # Re-normalise in cropped image space
+                x1 /= img.shape[1]
+                y1 /= img.shape[0]
+                width /= img.shape[1]
+                height /= img.shape[0]
 
-            # if (width*YOLO_INPUT_SIZE < BB_THRESHOLD) or (height*YOLO_INPUT_SIZE < BB_THRESHOLD):
-            #     excluded_indices.append(ann_idx)
+                # if (width*YOLO_INPUT_SIZE < BB_THRESHOLD) or (height*YOLO_INPUT_SIZE < BB_THRESHOLD):
+                #     excluded_indices.append(ann_idx)
 
-            old_label[ann_idx][1] = x1
-            old_label[ann_idx][2] = y1
-            old_label[ann_idx][3] = width
-            old_label[ann_idx][4] = height
+                old_label[ann_idx][1] = x1
+                old_label[ann_idx][2] = y1
+                old_label[ann_idx][3] = width
+                old_label[ann_idx][4] = height
 
-        # Now write out new file with corrected annotations
-        with open(os.path.join(train_label_dir, label), "w") as file:
-            label = [' '.join(list(map(str, ann))) for idx, ann in enumerate(old_label) if idx not in excluded_indices]
-            file.write('\n'.join(label))
+            # Now write out new file with corrected annotations
+            with open(os.path.join(train_label_dir, label), "w") as file:
+                label = [' '.join(list(map(str, ann))) for idx, ann in enumerate(old_label) if idx not in excluded_indices]
+                file.write('\n'.join(label))
 
     # We can now train a YOLO network using the information we have so far
     model = YOLO('yolov8x.pt')

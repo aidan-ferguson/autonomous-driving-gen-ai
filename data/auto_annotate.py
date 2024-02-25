@@ -9,10 +9,10 @@ from tqdm import tqdm
 from fsoco_parser import class_colour_map
 
 CLASS_NAME_MAP = {
-    9: "seg_large_orange_cone",
-    2: "seg_yellow_cone",
-    7: "seg_blue_cone",
-    8: "seg_orange_cone"
+    0: "seg_blue_cone",
+    1: "seg_orange_cone",
+    2: "seg_large_orange_cone",
+    3: "seg_yellow_cone",
 }
 
 def label_to_mask(image_dir: str, auto_annotate_dir: str, label: str) -> None:
@@ -59,11 +59,16 @@ def main() -> None:
     if not os.path.exists(args.images_dir) or not os.path.isdir(args.images_dir):
         raise Exception("Image folder does not exist")
 
+
     if not os.path.exists(args.yolo_model):
         raise Exception("YOLO model path does not exist")
+    
+    for file in os.listdir(args.images_dir):
+        if 'mask' in file:
+            print("Warning: there may be previous masks files in the image directory, please delete all the image masks before proceeding!")
 
-    auto_annotate(args.images_dir, det_model=args.yolo_model, sam_model='sam_b.pt')
-    auto_annotate_dir = os.path.join(os.path.dirname(args.images_dir), f"{os.path.basename(args.images_dir)}_auto_annotate_labels")
+    # auto_annotate(args.images_dir, det_model=args.yolo_model, sam_model='sam_b.pt')
+    auto_annotate_dir = os.path.join(os.path.dirname(args.images_dir), f"{os.path.basename(args.images_dir.rstrip('/'))}_auto_annotate_labels")
 
     for label in tqdm(os.listdir(auto_annotate_dir)):
         label_to_mask(args.images_dir, auto_annotate_dir, label)

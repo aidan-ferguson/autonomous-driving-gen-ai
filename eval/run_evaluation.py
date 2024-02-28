@@ -133,9 +133,9 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
             label = [' '.join(list(map(str, ann))) for idx, ann in enumerate(old_label) if idx not in excluded_indices]
             file.write('\n'.join(label))
 
-    print(f"Copied {len(rw_ids)} real-world samples to {dst_folder}")
+    print(f"Copied {len(rw_images)} real-world samples to {dst_folder}")
 
-    return rw_ids
+    return rw_images
 
 
 def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
@@ -164,7 +164,7 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
     
     # Generate train, val and test datasets. Note only the train dataset will be supplemented with synthetic data
     train_ids = copy_fsoco_data(real_world_dir, train_dataset_dir, n_rw_samples)
-    val_ids = copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples)
+    val_ids = copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples, excluded_samples=train_ids)
     copy_fsoco_data(real_world_dir, test_dataset_dir, n_rw_samples, excluded_samples=train_ids+val_ids)
 
     synthetic_count = 0

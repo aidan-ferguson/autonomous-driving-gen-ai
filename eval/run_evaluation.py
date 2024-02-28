@@ -212,8 +212,8 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
 
         results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=YOLO_INPUT_SIZE, verbose=False)
 
-        # We want to delete the generated labels.cache so the next iteration will read all the dataset
-        os.remove(os.path.join(dataset_dir, "labels.cache"))
+        # We want to delete the generated labels.cache for the train dir so we can add additional synthetic data in the next iteration
+        os.remove(os.path.join(train_dataset_dir, "labels.cache"))
 
 
 def main() -> None:

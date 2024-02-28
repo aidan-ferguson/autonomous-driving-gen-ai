@@ -214,7 +214,7 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
         os.chdir(eval_step_dir)
 
         # We can now train a YOLO network using the information we have so far
-        model = YOLO('yolov8m.yaml')
+        model = YOLO('yolov8m.pt')
         yaml = generate_yolo_yaml(dataset_dir)
 
         with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:

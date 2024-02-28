@@ -93,6 +93,7 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(rw_image_dir, image))
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
+        img = cv2.resize(img, (YOLO_INPUT_SIZE, YOLO_INPUT_SIZE))
         cv2.imwrite(os.path.join(image_dir, image), img)
 
         # Note, we cannot just copy the annotation as the annotation is only valid for the full image (with borders)
@@ -162,7 +163,7 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
     # Generate train and val datasets. Note only the train dataset will be supplemented with synthetic data
     train_ids = copy_fsoco_data(real_world_dir, train_dataset_dir, n_rw_samples)
     copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples, excluded_samples=train_ids)
-    
+
     synthetic_count = 0
     for idx in range(10):
         print(f"Evaluation step {idx}")
@@ -175,6 +176,11 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
             for sample_idx in range(synthetic_count, new_synthetic_count):
                 # Generate an image label pair using simulator mask & sim bounding box info
                 mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
+
+                if not os.path.exists(mask_path):
+                    print("Stopping before reaching max evaluation steps as simulator dataset exhausted")
+                    return
+
                 mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
                 masks.append((sample_idx, mask))
 
@@ -201,7 +207,6 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
                     
                     # Clear out masks and accumulate more
                     masks = []
-
 
             synthetic_count = new_synthetic_count
         
@@ -238,6 +243,7 @@ def main() -> None:
     parser.add_argument('--real_world_samples', type=int, default=100, help="How many real world samples should we include in the training dataset (default 100)")
     parser.add_argument('--random_seed', type=int, default=None, help="Random seed for the evaluation, defaults to no seed")
     parser.add_argument('--batch_size', type=int, default=25, help="How many simultaneous model inferences when sampling model")
+    parser.add_argument('--yolo_epochs', type=int, default=50, help="How many epochs to train the YOLO model for each evaluation step")
     args = parser.parse_args()
     
     if not os.path.exists(args.model_path) or not os.path.isfile(args.model_path):

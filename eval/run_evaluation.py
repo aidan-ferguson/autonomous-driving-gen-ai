@@ -41,7 +41,6 @@ def generate_yolo_yaml(dataset_dir: str):
 path: {dataset_dir}
 train: train/images
 val: val/images
-test: test/images
 
 names:
   0: blue
@@ -138,12 +137,10 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
     return rw_images
 
 
-def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
-    diffusion_model = DiffusionModel(model_path)
-
+def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int, batch_size: int) -> None:
     # Make folder to house our evaluation results
     timestamp = datetime.datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
-    eval_dir = os.path.join(os.path.dirname(__file__), f"diffusion_evaluation_{timestamp}")
+    eval_dir = os.path.join(os.path.dirname(__file__), f"{evaluation_type}_evaluation_{timestamp}")
     dataset_dir = os.path.join(eval_dir, "dataset")
 
     train_dataset_dir = os.path.join(dataset_dir, "train")
@@ -162,11 +159,10 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
         os.mkdir(val_dataset_dir)
         os.mkdir(test_dataset_dir)
     
-    # Generate train, val and test datasets. Note only the train dataset will be supplemented with synthetic data
+    # Generate train and val datasets. Note only the train dataset will be supplemented with synthetic data
     train_ids = copy_fsoco_data(real_world_dir, train_dataset_dir, n_rw_samples)
-    val_ids = copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples, excluded_samples=train_ids)
-    copy_fsoco_data(real_world_dir, test_dataset_dir, n_rw_samples, excluded_samples=train_ids+val_ids)
-
+    copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples, excluded_samples=train_ids)
+    
     synthetic_count = 0
     for idx in range(10):
         print(f"Evaluation step {idx}")
@@ -175,25 +171,36 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
         print(f"{new_synthetic_count=}")
         if (new_synthetic_count - synthetic_count) > 0:
             # We need to generate some images
+            masks = []
             for sample_idx in range(synthetic_count, new_synthetic_count):
                 # Generate an image label pair using simulator mask & sim bounding box info
                 mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
                 mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
-                sample = diffusion_model.forward(mask, n_samples=1)[0]
-                cv2.imwrite(os.path.join(os.path.join(train_dataset_dir, "images"), f"sampled_frame_{sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
+                masks.append((sample_idx, mask))
 
-                # Copy over sampled frame bounding boxes but remove bounding boxes with width or height less than some threshold
-                with open(os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"), "r") as source_file:
-                    with open(os.path.join(os.path.join(train_dataset_dir, "labels"), f"sampled_frame_{sample_idx}.txt"), "w") as dest_file:
-                        label = [list(map(float, line.split(' '))) for line in source_file.readlines()]
-                        excluded_indices = []
-                        for idx in range(len(label)):
-                            label[idx][0] = int(label[idx][0])
-                            if (label[idx][3]*YOLO_INPUT_SIZE < BB_THRESHOLD) or (label[idx][4]*YOLO_INPUT_SIZE < BB_THRESHOLD):
-                                excluded_indices.append(idx)
+                # We inference on batches of n masks at once for speed, wait until we have n masks before sampling model
+                # However, if we are at the end of the execution, inference anyway
+                if (len(masks) != 0 and (len(masks) % batch_size) == 0) or (sample_idx == (new_synthetic_count-1)):
+                    samples = sample_func([mask[1] for mask in masks])
 
-                        label = [row for idx, row in enumerate(label) if idx not in excluded_indices]
-                        dest_file.write('\n'.join([' '.join(list(map(str, row))) for row in label]))
+                    for batch_sample_idx, sample in zip([mask[0] for mask in masks], samples):
+                        cv2.imwrite(os.path.join(os.path.join(train_dataset_dir, "images"), f"sampled_frame_{batch_sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
+
+                        # Copy over sampled frame bounding boxes but remove bounding boxes with width or height less than some threshold
+                        with open(os.path.join(sim_label_dir, f"frame_{batch_sample_idx}_yolo.txt"), "r") as source_file:
+                            with open(os.path.join(os.path.join(train_dataset_dir, "labels"), f"sampled_frame_{batch_sample_idx}.txt"), "w") as dest_file:
+                                label = [list(map(float, line.split(' '))) for line in source_file.readlines()]
+                                excluded_indices = []
+                                for idx in range(len(label)):
+                                    label[idx][0] = int(label[idx][0])
+                                    if (label[idx][3]*YOLO_INPUT_SIZE < BB_THRESHOLD) or (label[idx][4]*YOLO_INPUT_SIZE < BB_THRESHOLD):
+                                        excluded_indices.append(idx)
+
+                                label = [row for idx, row in enumerate(label) if idx not in excluded_indices]
+                                dest_file.write('\n'.join([' '.join(list(map(str, row))) for row in label]))
+                    
+                    # Clear out masks and accumulate more
+                    masks = []
 
 
             synthetic_count = new_synthetic_count
@@ -215,6 +222,12 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
         # We want to delete the generated labels.cache for the train dir so we can add additional synthetic data in the next iteration
         os.remove(os.path.join(train_dataset_dir, "labels.cache"))
 
+
+def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
+    # TODO: batching
+    diffusion_model = DiffusionModel(model_path)
+    sample_func = lambda masks: diffusion_model.forward(masks=masks, n_samples=len(masks))
+    evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, n_rw_samples, batch_size=3)
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='Dissertation Evaluation Script')

@@ -22,8 +22,6 @@ from ultralytics import YOLO
 import torch
 from numpy.typing import NDArray
 
-from diffusion_model import DiffusionModel
-
 # Cluster permissions
 os.umask(0o002)
 
@@ -216,20 +214,21 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
         os.chdir(eval_step_dir)
 
         # We can now train a YOLO network using the information we have so far
-        model = YOLO('yolov8s.pt')
+        model = YOLO('yolov8m.yaml')
         yaml = generate_yolo_yaml(dataset_dir)
 
         with open(os.path.join(dataset_dir, "fsoco.yaml"), "w") as file:
             file.write(yaml)
 
-        results = model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=YOLO_INPUT_SIZE, verbose=False)
+        model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=YOLO_INPUT_SIZE, verbose=False)
+        model.val(plots=True)
 
         # We want to delete the generated labels.cache for the train dir so we can add additional synthetic data in the next iteration
         os.remove(os.path.join(train_dataset_dir, "labels.cache"))
 
 
 def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int, batch_size: int) -> None:
-    # TODO: batching
+    from diffusion_model import DiffusionModel
     diffusion_model = DiffusionModel(model_path)
     sample_func = lambda masks: diffusion_model.forward(masks=masks, n_samples=len(masks))
     evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, n_rw_samples, batch_size=batch_size)

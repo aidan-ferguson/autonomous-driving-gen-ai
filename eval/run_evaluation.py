@@ -31,7 +31,7 @@ os.umask(0o002)
 FSOCO_BORDER = 140
 
 # How small either the width or height of bounding boxes can be and still be included in the training data (in pixels)
-BB_THRESHOLD = 3
+BB_THRESHOLD = 4
 
 # What size of image should the YOLO network accept
 YOLO_INPUT_SIZE = 256
@@ -237,7 +237,7 @@ def main() -> None:
     parser.add_argument('sim_frame_dir', help="Directory containing simulator frames used to inference the model being evaluated")
     parser.add_argument('--real_world_samples', type=int, default=100, help="How many real world samples should we include in the training dataset (default 100)")
     parser.add_argument('--random_seed', type=int, default=None, help="Random seed for the evaluation, defaults to no seed")
-    parser.add_argument('--batch_size', type=int, default=10, help="How many simultaneous model inferences when sampling model")
+    parser.add_argument('--batch_size', type=int, default=25, help="How many simultaneous model inferences when sampling model")
     args = parser.parse_args()
     
     if not os.path.exists(args.model_path) or not os.path.isfile(args.model_path):

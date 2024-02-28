@@ -3,7 +3,7 @@ from sensor_msgs.msg import Image
 from rclpy.serialization import deserialize_message
 from cv_bridge import CvBridge
 import numpy as np
-import cv2, imageio, os, argparse
+import cv2, os, argparse
 
 
 def create_image_folder(folder_path: str) -> None:
@@ -66,47 +66,27 @@ def save_images_to_folder(folder_path: str, images: list[Image]) -> None:
   print("Finished writing images")
 
 
-def make_mp4_from_images(output_path: str, images: list[Image]):
-  """
-  Converts an array of sensor_msgs/Image into an mp4.
-  """
-  framerate = estimate_fps(images)
-  print(f"Estimating a framerate of {framerate} fps.")
-  writer = imageio.v2.get_writer(output_path, fps=framerate)
-  for image in images:
-    cv_image = CvBridge().imgmsg_to_cv2(image, "rgb8")
-    writer.append_data(cv_image)
-  writer.close()
-  print(f"Finished writing video to {output_path}.")
-
-
 def main():
   # Parse arguments
-  parser = argparse.ArgumentParser(prog='Video Enhancer', description='Exports videos/images from ros2 bags')
+  parser = argparse.ArgumentParser(prog='ROS2 Bag frame exporter', description='Exports images from ros2 bags')
   parser.add_argument('bag_directory')
   parser.add_argument('image_topic_name')
-  parser.add_argument('--format', choices=['video', 'images'], default='video')
-  parser.add_argument('--output_video', default='output.mp4')
-  parser.add_argument('--output_image_dir', default='images')
+  parser.add_argument('output_image_dir')
   parser.add_argument('--skip_frames', default="1")
   parser.add_argument('--start_frame', default="0")
-
   args = parser.parse_args()
 
   bag_directory = args.bag_directory
   image_topic = args.image_topic_name
-  output_path = args.output_video if args.format == "video" else args.output_image_dir
+  output_path = args.output_image_dir
   skip_frames = max(1, int(args.skip_frames))
   start_frame = max(0, int(args.start_frame))
 
   print(f"{bag_directory=} {image_topic=}")
   images = read_all_images(bag_directory, image_topic, skip_frames, start_frame)
 
-  if args.format == "video":
-    make_mp4_from_images(output_path, images)
-  else:
-    create_image_folder(output_path)
-    save_images_to_folder(output_path, images)
+  create_image_folder(output_path)
+  save_images_to_folder(output_path, images)
 
 
 if __name__ == "__main__":

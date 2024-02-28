@@ -36,8 +36,6 @@ BB_THRESHOLD = 5
 # What size of image should the YOLO network accept
 YOLO_INPUT_SIZE = 256
 
-TEST_SIZE = 100
-
 def generate_yolo_yaml(dataset_dir: str):
     return f"""
 path: {dataset_dir}
@@ -163,7 +161,8 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
     train_ids = copy_fsoco_data(real_world_dir, dataset_dir, n_rw_samples)
     
     # Generate distinct test dataset
-    copy_fsoco_data(real_world_dir, test_dataset_dir, TEST_SIZE, excluded_samples=train_ids)
+    print(train_ids)
+    copy_fsoco_data(real_world_dir, test_dataset_dir, n_rw_samples, excluded_samples=train_ids)
 
     synthetic_count = 0
     for idx in range(10):

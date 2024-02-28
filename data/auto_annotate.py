@@ -67,7 +67,7 @@ def main() -> None:
         if 'mask' in file:
             print("Warning: there may be previous masks files in the image directory, please delete all the image masks before proceeding!")
 
-    # auto_annotate(args.images_dir, det_model=args.yolo_model, sam_model='sam_b.pt')
+    auto_annotate(args.images_dir, det_model=args.yolo_model, sam_model='sam_b.pt')
     auto_annotate_dir = os.path.join(os.path.dirname(args.images_dir), f"{os.path.basename(args.images_dir.rstrip('/'))}_auto_annotate_labels")
 
     for label in tqdm(os.listdir(auto_annotate_dir)):
@@ -76,3 +76,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    

@@ -31,7 +31,7 @@ os.umask(0o002)
 FSOCO_BORDER = 140
 
 # How small either the width or height of bounding boxes can be and still be included in the training data (in pixels)
-BB_THRESHOLD = 5
+BB_THRESHOLD = 3
 
 # What size of image should the YOLO network accept
 YOLO_INPUT_SIZE = 256
@@ -223,11 +223,11 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
         os.remove(os.path.join(train_dataset_dir, "labels.cache"))
 
 
-def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
+def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int, batch_size: int) -> None:
     # TODO: batching
     diffusion_model = DiffusionModel(model_path)
     sample_func = lambda masks: diffusion_model.forward(masks=masks, n_samples=len(masks))
-    evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, n_rw_samples, batch_size=3)
+    evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, n_rw_samples, batch_size=batch_size)
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='Dissertation Evaluation Script')
@@ -237,6 +237,7 @@ def main() -> None:
     parser.add_argument('sim_frame_dir', help="Directory containing simulator frames used to inference the model being evaluated")
     parser.add_argument('--real_world_samples', type=int, default=100, help="How many real world samples should we include in the training dataset (default 100)")
     parser.add_argument('--random_seed', type=int, default=None, help="Random seed for the evaluation, defaults to no seed")
+    parser.add_argument('--batch_size', type=int, default=10, help="How many simultaneous model inferences when sampling model")
     args = parser.parse_args()
     
     if not os.path.exists(args.model_path) or not os.path.isfile(args.model_path):
@@ -254,7 +255,7 @@ def main() -> None:
 
     if args.evaluation_type == "diffusion":
         print(f"Evaluating diffusion model {args.model_path}")
-        evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.real_world_samples)
+        evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.real_world_samples, args.batch_size)
     elif args.evaluation_type == "gan":
         print(f"Evaluating GAN model {args.model_path}")
 

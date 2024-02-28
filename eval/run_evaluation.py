@@ -93,8 +93,8 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(rw_image_dir, image))
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
-        img = cv2.resize(img, (YOLO_INPUT_SIZE, YOLO_INPUT_SIZE))
-        cv2.imwrite(os.path.join(image_dir, image), img)
+        resized = cv2.resize(img, (YOLO_INPUT_SIZE, YOLO_INPUT_SIZE))
+        cv2.imwrite(os.path.join(image_dir, image), resized)
 
         # Note, we cannot just copy the annotation as the annotation is only valid for the full image (with borders)
         #   we must calculate a new label file
@@ -165,10 +165,10 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
     copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples, excluded_samples=train_ids)
 
     synthetic_count = 0
-    for idx in range(10):
-        print(f"Evaluation step {idx}")
+    for eval_step in range(10):
+        print(f"Evaluation step {eval_step}")
 
-        new_synthetic_count = synthetic_data_schedule(idx, n_rw_samples)
+        new_synthetic_count = synthetic_data_schedule(eval_step, n_rw_samples)
         print(f"{new_synthetic_count=}")
         if (new_synthetic_count - synthetic_count) > 0:
             # We need to generate some images
@@ -211,7 +211,7 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
             synthetic_count = new_synthetic_count
         
         # YOLO training outputs a folder called 'runs' in the current working dir, so chdir into the iteration
-        eval_step_dir = os.path.join(eval_dir, f"evaluation_step_{idx}")
+        eval_step_dir = os.path.join(eval_dir, f"evaluation_step_{eval_step}")
         os.mkdir(eval_step_dir)
         os.chdir(eval_step_dir)
 

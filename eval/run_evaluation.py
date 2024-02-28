@@ -39,9 +39,9 @@ YOLO_INPUT_SIZE = 256
 def generate_yolo_yaml(dataset_dir: str):
     return f"""
 path: {dataset_dir}
-train: images
-val: images
-test:
+train: train/images
+val: val/images
+test: test/images
 
 names:
   0: blue
@@ -71,13 +71,13 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
     Will copy data and filter/format it
     """
 
-    train_image_dir = os.path.join(dst_folder, "images")
-    train_label_dir = os.path.join(dst_folder, "labels")
+    image_dir = os.path.join(dst_folder, "images")
+    label_dir = os.path.join(dst_folder, "labels")
 
-    if not os.path.exists(train_image_dir):
-        os.mkdir(train_image_dir)
-    if not os.path.exists(train_label_dir):
-        os.mkdir(train_label_dir)
+    if not os.path.exists(image_dir):
+        os.mkdir(image_dir)
+    if not os.path.exists(label_dir):
+        os.mkdir(label_dir)
 
     # Get real world samples
     rw_image_dir = os.path.join(src_folder, "images")
@@ -94,7 +94,7 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(rw_image_dir, image))
         img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
-        cv2.imwrite(os.path.join(train_image_dir, image), img)
+        cv2.imwrite(os.path.join(image_dir, image), img)
 
         # Note, we cannot just copy the annotation as the annotation is only valid for the full image (with borders)
         #   we must calculate a new label file
@@ -129,12 +129,13 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
             old_label[ann_idx][4] = height
 
         # Now write out new file with corrected annotations
-        with open(os.path.join(train_label_dir, label), "w") as file:
+        with open(os.path.join(label_dir, label), "w") as file:
             label = [' '.join(list(map(str, ann))) for idx, ann in enumerate(old_label) if idx not in excluded_indices]
             file.write('\n'.join(label))
 
-    return rw_ids
+    print(f"Copied {len(rw_ids)} real-world samples to {dst_folder}")
 
+    return rw_ids
 
 
 def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int) -> None:
@@ -145,6 +146,8 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
     eval_dir = os.path.join(os.path.dirname(__file__), f"diffusion_evaluation_{timestamp}")
     dataset_dir = os.path.join(eval_dir, "dataset")
 
+    train_dataset_dir = os.path.join(dataset_dir, "train")
+    val_dataset_dir = os.path.join(dataset_dir, "val")
     test_dataset_dir = os.path.join(dataset_dir, "test")
 
     sim_mask_dir = os.path.join(sim_frame_dir, "masks")
@@ -155,14 +158,14 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
     else:
         os.mkdir(eval_dir)
         os.mkdir(dataset_dir)
+        os.mkdir(train_dataset_dir)
+        os.mkdir(val_dataset_dir)
         os.mkdir(test_dataset_dir)
     
-    # Generate train dataset
-    train_ids = copy_fsoco_data(real_world_dir, dataset_dir, n_rw_samples)
-    
-    # Generate distinct test dataset
-    print(train_ids)
-    copy_fsoco_data(real_world_dir, test_dataset_dir, n_rw_samples, excluded_samples=train_ids)
+    # Generate train, val and test datasets. Note only the train dataset will be supplemented with synthetic data
+    train_ids = copy_fsoco_data(real_world_dir, train_dataset_dir, n_rw_samples)
+    val_ids = copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples)
+    copy_fsoco_data(real_world_dir, test_dataset_dir, n_rw_samples, excluded_samples=train_ids+val_ids)
 
     synthetic_count = 0
     for idx in range(10):
@@ -177,11 +180,11 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
                 mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
                 mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
                 sample = diffusion_model.forward(mask, n_samples=1)[0]
-                cv2.imwrite(os.path.join(os.path.join(dataset_dir, "images"), f"sampled_frame_{sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
+                cv2.imwrite(os.path.join(os.path.join(train_dataset_dir, "images"), f"sampled_frame_{sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
 
                 # Copy over sampled frame bounding boxes but remove bounding boxes with width or height less than some threshold
                 with open(os.path.join(sim_label_dir, f"frame_{sample_idx}_yolo.txt"), "r") as source_file:
-                    with open(os.path.join(os.path.join(dataset_dir, "labels"), f"sampled_frame_{sample_idx}.txt"), "w") as dest_file:
+                    with open(os.path.join(os.path.join(train_dataset_dir, "labels"), f"sampled_frame_{sample_idx}.txt"), "w") as dest_file:
                         label = [list(map(float, line.split(' '))) for line in source_file.readlines()]
                         excluded_indices = []
                         for idx in range(len(label)):

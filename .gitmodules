@@ -1,3 +1,6 @@
 [submodule "ldm/ControlNet"]
 	path = ldm/ControlNet
 	url = https://gitlab.com/aidan-ferguson/ControlNet.git
+[submodule "gan/contrastive-unpaired-translation"]
+	path = gan/contrastive-unpaired-translation
+	url = https://github.com/taesungp/contrastive-unpaired-translation.git

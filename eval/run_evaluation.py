@@ -136,7 +136,7 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
     return rw_images
 
 
-def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int, batch_size: int) -> None:
+def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_frame_dir: str, input_val_dir: str, n_rw_samples: int, batch_size: int) -> None:
     # Make folder to house our evaluation results
     timestamp = datetime.datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
     eval_dir = os.path.join(os.path.dirname(__file__), f"{evaluation_type}_evaluation_{timestamp}")
@@ -160,7 +160,7 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
     
     # Generate train and val datasets. Note only the train dataset will be supplemented with synthetic data
     train_ids = copy_fsoco_data(real_world_dir, train_dataset_dir, n_rw_samples)
-    copy_fsoco_data(real_world_dir, val_dataset_dir, n_rw_samples, excluded_samples=train_ids)
+    copy_fsoco_data(input_val_dir, val_dataset_dir, len(os.listdir(os.path.join(input_val_dir, "images"))), excluded_samples=train_ids)
 
     synthetic_count = 0
     for eval_step in range(10):
@@ -227,11 +227,11 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
         os.remove(os.path.join(train_dataset_dir, "labels.cache"))
 
 
-def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, n_rw_samples: int, batch_size: int) -> None:
+def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int, batch_size: int) -> None:
     from diffusion_model import DiffusionModel
     diffusion_model = DiffusionModel(model_path)
     sample_func = lambda masks: diffusion_model.forward(masks=masks, n_samples=len(masks))
-    evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, n_rw_samples, batch_size=batch_size)
+    evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='Dissertation Evaluation Script')
@@ -239,6 +239,7 @@ def main() -> None:
     parser.add_argument('model_path', help="Path to the model to be evaluated")
     parser.add_argument('real_world_dir', help="Directory containing the real world annotations in YOLO format")
     parser.add_argument('sim_frame_dir', help="Directory containing simulator frames used to inference the model being evaluated")
+    parser.add_argument('validation_dataset_dir', help="Directory containing the dataset used to validate the model")
     parser.add_argument('--real_world_samples', type=int, default=100, help="How many real world samples should we include in the training dataset (default 100)")
     parser.add_argument('--random_seed', type=int, default=None, help="Random seed for the evaluation, defaults to no seed")
     parser.add_argument('--batch_size', type=int, default=25, help="How many simultaneous model inferences when sampling model")
@@ -253,6 +254,9 @@ def main() -> None:
     
     if not os.path.exists(args.sim_frame_dir):
         raise Exception(f"The simulator frames dir '{args.sim_frame_dir}' does not exist!")
+    
+    if not os.path.exists(args.validation_dataset_dir):
+        raise Exception(f"The validation frames dir '{args.validation_dataset_dir}' does not exist!")
 
     if args.random_seed is not None:
         random.seed(args.random_seed)
@@ -260,7 +264,7 @@ def main() -> None:
 
     if args.evaluation_type == "diffusion":
         print(f"Evaluating diffusion model {args.model_path}")
-        evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.real_world_samples, args.batch_size)
+        evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
     elif args.evaluation_type == "gan":
         print(f"Evaluating GAN model {args.model_path}")
 

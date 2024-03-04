@@ -63,10 +63,12 @@ def synthetic_data_schedule(trail_idx: int, real_world_train_size: int) -> int:
 def train_yolo(epochs: int, data_dir: int):
     pass
 
-def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_samples: list[str] = []) -> list[str]:
+def copy_yolo_data(src_folder: str, dst_folder: str, n_samples: int, excluded_samples: list[str] = [], fsoco: bool = False) -> list[str]:
     """
     Will copy data and filter/format it
     """
+    # If FSOCO data, set the border accordingly
+    fsoco_border = FSOCO_BORDER if fsoco else 0
 
     image_dir = os.path.join(dst_folder, "images")
     label_dir = os.path.join(dst_folder, "labels")
@@ -90,7 +92,7 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
     for image, label in zip(rw_images, rw_labels):
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(rw_image_dir, image))
-        img = img[FSOCO_BORDER:-FSOCO_BORDER, FSOCO_BORDER:-FSOCO_BORDER]
+        img = img[fsoco_border:-fsoco_border, fsoco_border:-fsoco_border]
         resized = cv2.resize(img, (YOLO_INPUT_SIZE, YOLO_INPUT_SIZE))
         cv2.imwrite(os.path.join(image_dir, image), resized)
 
@@ -107,10 +109,10 @@ def copy_fsoco_data(src_folder: str, dst_folder: str, n_samples: int, excluded_s
             old_label[ann_idx][0] = int(old_label[ann_idx][0])
 
             # Convert from old image normalised space to cropped image pixel space
-            x1 = (old_label[ann_idx][1] * (img.shape[1] + (FSOCO_BORDER*2))) - FSOCO_BORDER
-            y1 = (old_label[ann_idx][2] * (img.shape[0] + (FSOCO_BORDER*2))) - FSOCO_BORDER
-            width = (old_label[ann_idx][3] * (img.shape[1] + (FSOCO_BORDER*2)))
-            height = (old_label[ann_idx][4] * (img.shape[0] + (FSOCO_BORDER*2)))
+            x1 = (old_label[ann_idx][1] * (img.shape[1] + (fsoco_border*2))) - fsoco_border
+            y1 = (old_label[ann_idx][2] * (img.shape[0] + (fsoco_border*2))) - fsoco_border
+            width = (old_label[ann_idx][3] * (img.shape[1] + (fsoco_border*2)))
+            height = (old_label[ann_idx][4] * (img.shape[0] + (fsoco_border*2)))
 
             # Re-normalise in cropped image space
             x1 /= img.shape[1]
@@ -144,7 +146,6 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
 
     train_dataset_dir = os.path.join(dataset_dir, "train")
     val_dataset_dir = os.path.join(dataset_dir, "val")
-    test_dataset_dir = os.path.join(dataset_dir, "test")
 
     sim_mask_dir = os.path.join(sim_frame_dir, "masks")
     sim_label_dir = os.path.join(sim_frame_dir, "labels")
@@ -156,11 +157,10 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
         os.mkdir(dataset_dir)
         os.mkdir(train_dataset_dir)
         os.mkdir(val_dataset_dir)
-        os.mkdir(test_dataset_dir)
     
     # Generate train and val datasets. Note only the train dataset will be supplemented with synthetic data
-    train_ids = copy_fsoco_data(real_world_dir, train_dataset_dir, n_rw_samples)
-    copy_fsoco_data(input_val_dir, val_dataset_dir, len(os.listdir(os.path.join(input_val_dir, "images"))), excluded_samples=train_ids)
+    train_ids = copy_yolo_data(real_world_dir, train_dataset_dir, n_rw_samples, fsoco=True)
+    copy_yolo_data(input_val_dir, val_dataset_dir, len(os.listdir(os.path.join(input_val_dir, "images"))), excluded_samples=train_ids)
 
     synthetic_count = 0
     for eval_step in range(10):

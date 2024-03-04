@@ -92,7 +92,8 @@ def copy_yolo_data(src_folder: str, dst_folder: str, n_samples: int, excluded_sa
     for image, label in zip(rw_images, rw_labels):
         # FSOCO dataset has a border of 140px around the image - remove this 
         img = cv2.imread(os.path.join(rw_image_dir, image))
-        img = img[fsoco_border:-fsoco_border, fsoco_border:-fsoco_border]
+        if fsoco:
+            img = img[fsoco_border:-fsoco_border, fsoco_border:-fsoco_border]
         resized = cv2.resize(img, (YOLO_INPUT_SIZE, YOLO_INPUT_SIZE))
         cv2.imwrite(os.path.join(image_dir, image), resized)
 

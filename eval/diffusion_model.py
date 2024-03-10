@@ -7,7 +7,6 @@ import cv2
 import einops
 import numpy as np
 import torch
-import random
 from numpy.typing import NDArray
 
 from share import *
@@ -27,13 +26,12 @@ class DiffusionModel():
 
     @torch.no_grad()
     def forward(self, 
-                masks: list[NDArray], 
-                n_samples: int = 1,
+                masks: list[NDArray],
                 ddim_steps: int = 50
                 ):
         assert len(masks) > 0
-        assert len(masks) == n_samples
 
+        n_samples = len(masks)
         guess_mode = False
         n_prompt = ""
         strength = 1.0

@@ -16,11 +16,11 @@ import argparse
 import os
 import random
 import datetime
-import shutil
 import cv2
 from ultralytics import YOLO
 import torch
 from numpy.typing import NDArray
+from PIL import Image
 
 # Cluster permissions
 os.umask(0o002)
@@ -148,6 +148,7 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
     train_dataset_dir = os.path.join(dataset_dir, "train")
     val_dataset_dir = os.path.join(dataset_dir, "val")
 
+    sim_image_dir = os.path.join(sim_frame_dir, "images")
     sim_mask_dir = os.path.join(sim_frame_dir, "masks")
     sim_label_dir = os.path.join(sim_frame_dir, "labels")
 
@@ -171,24 +172,29 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
         print(f"{new_synthetic_count=}")
         if (new_synthetic_count - synthetic_count) > 0:
             # We need to generate some images
-            masks = []
-            for sample_idx in range(synthetic_count, new_synthetic_count):
-                # Generate an image label pair using simulator mask & sim bounding box info
-                mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
+            
+            # This array will hold the simulator input data for the networks
+            sim_data = []
 
-                if not os.path.exists(mask_path):
+            for sample_idx in range(synthetic_count, new_synthetic_count):
+                # Generate an image label pair using simulator mask/image & sim bounding box info
+                mask_path = os.path.join(sim_mask_dir, f"frame_{sample_idx}_mask.png")
+                image_path = os.path.join(sim_image_dir, f"frame_{sample_idx}.png")
+
+                if not os.path.exists(mask_path) or not os.path.exists(image_path):
                     print("Stopping before reaching max evaluation steps as simulator dataset exhausted")
                     return
 
                 mask = cv2.cvtColor(cv2.imread(mask_path), cv2.COLOR_BGR2RGB)
-                masks.append((sample_idx, mask))
+                image = Image.open(image_path).convert('RGB')
+                sim_data.append((sample_idx, image, mask))
 
-                # We inference on batches of n masks at once for speed, wait until we have n masks before sampling model
+                # We inference on batches of n masks and images at once for speed, wait until we have n image mask pairs before sampling model
                 # However, if we are at the end of the execution, inference anyway
-                if (len(masks) != 0 and (len(masks) % batch_size) == 0) or (sample_idx == (new_synthetic_count-1)):
-                    samples = sample_func([mask[1] for mask in masks])
+                if (len(sim_data) != 0 and (len(sim_data) % batch_size) == 0) or (sample_idx == (new_synthetic_count-1)):
+                    samples = sample_func([image[1] for image in sim_data], [mask[2] for mask in sim_data])
 
-                    for batch_sample_idx, sample in zip([mask[0] for mask in masks], samples):
+                    for batch_sample_idx, sample in zip([data[0] for data in sim_data], samples):
                         cv2.imwrite(os.path.join(os.path.join(train_dataset_dir, "images"), f"sampled_frame_{batch_sample_idx}.png"), cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
 
                         # Copy over sampled frame bounding boxes but remove bounding boxes with width or height less than some threshold
@@ -204,8 +210,8 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
                                 label = [row for idx, row in enumerate(label) if idx not in excluded_indices]
                                 dest_file.write('\n'.join([' '.join(list(map(str, row))) for row in label]))
                     
-                    # Clear out masks and accumulate more
-                    masks = []
+                    # Clear out previous sim image/mask pairs and accumulate more
+                    sim_data = []
 
             synthetic_count = new_synthetic_count
         
@@ -227,12 +233,17 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
         # We want to delete the generated labels.cache for the train dir so we can add additional synthetic data in the next iteration
         os.remove(os.path.join(train_dataset_dir, "labels.cache"))
 
-
 def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int, batch_size: int) -> None:
     from diffusion_model import DiffusionModel
     diffusion_model = DiffusionModel(model_path)
-    sample_func = lambda masks: diffusion_model.forward(masks=masks, n_samples=len(masks))
+    sample_func = lambda _, masks: diffusion_model.forward(masks=masks)
     evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
+
+def evaluation_cut_model(model_path: str, real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int, batch_size: int) -> None:
+    from cut_model import CUTModel
+    cut_model = CUTModel(model_path)
+    sample_func = lambda sim_frames, _: cut_model.forward(sim_frames=sim_frames)
+    evaluate_model(sample_func, "gan", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='Dissertation Evaluation Script')
@@ -268,6 +279,7 @@ def main() -> None:
         evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
     elif args.evaluation_type == "gan":
         print(f"Evaluating GAN model {args.model_path}")
+        evaluation_cut_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
 
 
 if __name__ == "__main__":

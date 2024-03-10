@@ -34,11 +34,19 @@ class CUTModel:
         self.model.load_state_dict(torch.load(model_path))
         self.model.eval()
 
+        print(f"Loaded GAN model {model_path}")
+
     @torch.no_grad()
     def forward(self,
                 sim_frames: list[Image.Image]):
             
-            sim_frames = torch.tensor([self.to_tensor(self.resize(im)) for im in sim_frames]).to(self.gpu_ids[0])
+            sim_frames = [self.to_tensor(self.resize(im)) for im in sim_frames]
+            
+            if len(sim_frames) > 1:
+                sim_frames = torch.stack(sim_frames).to(self.gpu_ids[0])
+            else:
+                sim_frames = sim_frames[0][None, :].to(self.gpu_ids[0])
+            
             fake = self.model(sim_frames)
 
             numpy_img = fake.to("cpu").detach().numpy()

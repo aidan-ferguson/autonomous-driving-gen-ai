@@ -57,3 +57,7 @@ venv
 
 # YOLO traininng datasets
 yolo_dataset
+
+# Evaluation folders
+gan_evaluation_*
+diffusion_evaluation_*

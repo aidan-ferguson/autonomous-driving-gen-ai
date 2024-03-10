@@ -60,9 +60,6 @@ def synthetic_data_schedule(trail_idx: int, real_world_train_size: int) -> int:
     # For every subsequent trail add 50% of the initial set's worth of data
     return (real_world_train_size//2)*trail_idx
 
-def train_yolo(epochs: int, data_dir: int):
-    pass
-
 def copy_yolo_data(src_folder: str, dst_folder: str, n_samples: int, excluded_samples: list[str] = [], fsoco: bool = False) -> list[str]:
     """
     Will copy data and filter/format it
@@ -165,7 +162,9 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
     copy_yolo_data(input_val_dir, val_dataset_dir, len(os.listdir(os.path.join(input_val_dir, "images"))), excluded_samples=train_ids)
 
     synthetic_count = 0
-    for eval_step in range(10):
+    eval_step = 0
+    finish_evaluation = False
+    while not finish_evaluation:
         print(f"Evaluation step {eval_step}")
 
         new_synthetic_count = synthetic_data_schedule(eval_step, n_rw_samples)
@@ -232,6 +231,7 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
 
         # We want to delete the generated labels.cache for the train dir so we can add additional synthetic data in the next iteration
         os.remove(os.path.join(train_dataset_dir, "labels.cache"))
+        eval_step += 1
 
 def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int, batch_size: int) -> None:
     from diffusion_model import DiffusionModel

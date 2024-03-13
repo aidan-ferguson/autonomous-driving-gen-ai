@@ -21,6 +21,7 @@ from ultralytics import YOLO
 import torch
 from numpy.typing import NDArray
 from PIL import Image
+import numpy as np
 
 # Cluster permissions
 os.umask(0o002)
@@ -227,7 +228,6 @@ def evaluate_model(sample_func, evaluation_type: str, real_world_dir: str, sim_f
             file.write(yaml)
 
         model.train(data=os.path.join(dataset_dir, "fsoco.yaml"), epochs=10, imgsz=YOLO_INPUT_SIZE, verbose=False)
-        model.val(plots=True)
 
         # We want to delete the generated labels.cache for the train dir so we can add additional synthetic data in the next iteration
         os.remove(os.path.join(train_dataset_dir, "labels.cache"))
@@ -239,16 +239,20 @@ def evaluate_diffusion_model(model_path: str, real_world_dir: str, sim_frame_dir
     sample_func = lambda _, masks: diffusion_model.forward(masks=masks)
     evaluate_model(sample_func, "diffusion", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
 
-def evaluation_cut_model(model_path: str, real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int, batch_size: int) -> None:
+def evaluate_cut_model(model_path: str, real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int, batch_size: int) -> None:
     from cut_model import CUTModel
     cut_model = CUTModel(model_path)
     sample_func = lambda sim_frames, _: cut_model.forward(sim_frames=sim_frames)
     evaluate_model(sample_func, "gan", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
 
+def evaluate_adding_sim_data(real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int) -> None:
+    sample_func = lambda sim_frames, _: np.asarray([frame.resize((256, 256),Image.BICUBIC) for frame in sim_frames])
+    evaluate_model(sample_func, "sim", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, 1)
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog='Dissertation Evaluation Script')
-    parser.add_argument('evaluation_type', choices=["gan", "diffusion"], help="Which type of network to evaluate")           
-    parser.add_argument('model_path', help="Path to the model to be evaluated")
+    parser.add_argument('evaluation_type', choices=["gan", "diffusion", "sim"], help="Which type of network to evaluate")           
+    parser.add_argument('model_path', help="Path to the model to be evaluated, for 'sim' can be anything")
     parser.add_argument('real_world_dir', help="Directory containing the real world annotations in YOLO format")
     parser.add_argument('sim_frame_dir', help="Directory containing simulator frames used to inference the model being evaluated")
     parser.add_argument('validation_dataset_dir', help="Directory containing the dataset used to validate the model")
@@ -279,7 +283,11 @@ def main() -> None:
         evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
     elif args.evaluation_type == "gan":
         print(f"Evaluating GAN model {args.model_path}")
-        evaluation_cut_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
+        evaluate_cut_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
+    elif args.evaluation_type == "sim":
+        print(f"Evaluating add sim data to training")
+        evaluate_adding_sim_data(args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples)
+        
 
 
 if __name__ == "__main__":

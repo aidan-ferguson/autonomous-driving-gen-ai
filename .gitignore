@@ -61,3 +61,4 @@ yolo_dataset
 # Evaluation folders
 gan_evaluation_*
 diffusion_evaluation_*
+sim_evaluation_*

@@ -4,3 +4,6 @@
 [submodule "gan/contrastive-unpaired-translation"]
 	path = gan/contrastive-unpaired-translation
 	url = https://github.com/taesungp/contrastive-unpaired-translation.git
+[submodule "gan/pytorch-CycleGAN-and-pix2pix"]
+	path = gan/pytorch-CycleGAN-and-pix2pix
+	url = https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix

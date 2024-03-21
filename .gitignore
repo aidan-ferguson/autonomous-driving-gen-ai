@@ -62,3 +62,5 @@ yolo_dataset
 gan_evaluation_*
 diffusion_evaluation_*
 sim_evaluation_*
+pix2pix_evaluation_*
+cut_evaluation_*

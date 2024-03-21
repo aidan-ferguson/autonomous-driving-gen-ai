@@ -243,7 +243,13 @@ def evaluate_cut_model(model_path: str, real_world_dir: str, sim_frame_dir: str,
     from cut_model import CUTModel
     cut_model = CUTModel(model_path)
     sample_func = lambda sim_frames, _: cut_model.forward(sim_frames=sim_frames)
-    evaluate_model(sample_func, "gan", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
+    evaluate_model(sample_func, "cut", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
+
+def evaluate_pix2pix_model(model_path: str, real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int, batch_size: int) -> None:
+    from pix2pix_model import Pix2PixModel
+    cut_model = Pix2PixModel(model_path)
+    sample_func = lambda _, masks: cut_model.forward(masks=[Image.fromarray(mask) for mask in masks])
+    evaluate_model(sample_func, "pix2pix", real_world_dir, sim_frame_dir, validation_dataset_dir, n_rw_samples, batch_size=batch_size)
 
 def evaluate_adding_sim_data(real_world_dir: str, sim_frame_dir: str, validation_dataset_dir: str, n_rw_samples: int) -> None:
     sample_func = lambda sim_frames, _: np.asarray([frame.resize((256, 256),Image.BICUBIC) for frame in sim_frames])
@@ -251,7 +257,7 @@ def evaluate_adding_sim_data(real_world_dir: str, sim_frame_dir: str, validation
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='Dissertation Evaluation Script')
-    parser.add_argument('evaluation_type', choices=["gan", "diffusion", "sim"], help="Which type of network to evaluate")           
+    parser.add_argument('evaluation_type', choices=["cut", "diffusion", "pix2pix", "sim"], help="Which type of network to evaluate")           
     parser.add_argument('model_path', help="Path to the model to be evaluated, for 'sim' can be anything")
     parser.add_argument('real_world_dir', help="Directory containing the real world annotations in YOLO format")
     parser.add_argument('sim_frame_dir', help="Directory containing simulator frames used to inference the model being evaluated")
@@ -281,9 +287,12 @@ def main() -> None:
     if args.evaluation_type == "diffusion":
         print(f"Evaluating diffusion model {args.model_path}")
         evaluate_diffusion_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
-    elif args.evaluation_type == "gan":
-        print(f"Evaluating GAN model {args.model_path}")
+    elif args.evaluation_type == "cut":
+        print(f"Evaluating CUT model {args.model_path}")
         evaluate_cut_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
+    elif args.evaluation_type == "pix2pix":
+        print(f"Evaluating Pix2Pix model {args.model_path}")
+        evaluate_pix2pix_model(args.model_path, args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples, args.batch_size)
     elif args.evaluation_type == "sim":
         print(f"Evaluating add sim data to training")
         evaluate_adding_sim_data(args.real_world_dir, args.sim_frame_dir, args.validation_dataset_dir, args.real_world_samples)

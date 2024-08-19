@@ -31,8 +31,11 @@ Each model is conditioned on simulator outputs:
 
 The GAN model converts directly from the simulator image domain to the real world, without any need for an additional conditioning mechanism. This also makes the model trivial to train as you only need samples from each image distribution to train the network.
 
-The Latent Diffusion model is conditioned using a semantic segmentation mask derived from the simulator. This means we have to train on paired data, this is achieved by auto-annotating a dataset gathered from the car at the competition
+The Latent Diffusion model is conditioned using a semantic segmentation mask derived from the simulator. This means we have to train on paired data, this is achieved by auto-annotating a dataset gathered from the car at the competition.
 
+These models could be used to simulate, test and validate the autonomous driving software in a controlled environment:
+
+![Generative AI usage in Autonomous Driving validation stack](img/system-diagram.png)
 
 ## Results
 

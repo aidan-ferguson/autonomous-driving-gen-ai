@@ -12,7 +12,7 @@ Formula Student AI sees teams develop software solutions to autonomously navigat
 
 The competition is run in a 'time-trail' fashion, with tracks consisting of blue and yellow traffic cones that denote the boundaries. The autonomous system then has to detect these cones, determine a path through the environment and execute the plan. This combination of real-world problems makes this a very challenging robotics competition. For context, see the image attached below.
 
-![Image of ADS-DV at silverstone](img/ads-dv.png | width=300)
+![Image of ADS-DV at silverstone](img/ads-dv.png)
 
 ### Motivation
 
